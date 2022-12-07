@@ -29,3 +29,5 @@ RUN apt update && apt -y upgrade &&   apt -y install   \
   ripgrep \
   python3.10-venv \
   dnsutils
+RUN yes | unminimize
+RUN apt -y install man-db manpages-ja manpages-ja-dev
