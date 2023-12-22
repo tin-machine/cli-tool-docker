@@ -161,4 +161,5 @@ RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
     # できた
     # ~/.rd/bin/nerdctl run --privileged --network=host -h localhost -u 0:0 -v ~/:/Users/jp30943/ -w /Users/jp30943/ -it test2 sh -c "/usr/sbin/useradd -u 503 -g 20 jp30943 -d /Users/jp30943 -s /usr/bin/fish ; su --login jp30943"
 
-
+# セキュリティチェックを導入したい
+# https://tech.connehito.com/entry/2023/12/21/104631
