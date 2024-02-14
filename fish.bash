@@ -3,8 +3,6 @@
 PATH=$PATH:~/.rd/bin
 
 ~/.rd/bin/nerdctl \
-  --address /run/k3s/containerd/containerd.sock \
-  --namespace k8s.io \
   run \
     --privileged \
     --network host \

@@ -10,16 +10,16 @@ RUN apt-get update && apt-get -y install \
  	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
  	make install
 
-FROM ubuntu:24.04 AS terraform-install
-# teraformインストール
-# 下記の方法だとlsb_releaseでエラーが起きるのでバイナリをダウンロードする
-# 	wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && \
-# 	echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list && \
-# 	apt-get update && apt install terraform && \
-# https://developer.hashicorp.com/terraform/install
-RUN	apt-get update && apt-get -y install curl unzip && \
-  curl -L https://releases.hashicorp.com/terraform/1.7.1/terraform_1.7.1_linux_arm64.zip -o terraform.zip && \
-  unzip terraform.zip
+# FROM ubuntu:24.04 AS terraform-install
+# # teraformインストール
+# # 下記の方法だとlsb_releaseでエラーが起きるのでバイナリをダウンロードする
+# # 	wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && \
+# # 	echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list && \
+# # 	apt-get update && apt install terraform && \
+# # https://developer.hashicorp.com/terraform/install
+# RUN	apt-get update && apt-get -y install curl unzip && \
+#   curl -L https://releases.hashicorp.com/terraform/1.7.1/terraform_1.7.1_linux_arm64.zip -o terraform.zip && \
+#   unzip terraform.zip
 
 FROM ubuntu:24.04
 
@@ -29,7 +29,7 @@ ENV LANG=ja_JP.UTF-8
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
-COPY --from=terraform-install /terraform /usr/local/bin/
+# COPY --from=terraform-install /terraform /usr/local/bin/
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
@@ -75,6 +75,7 @@ RUN yes | unminimize && \
 	screen \
 	shellcheck \
 	sudo \
+	terraform-switcher \
 	tmux \
 	tig \
 	trash-cli \
