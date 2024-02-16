@@ -2,7 +2,7 @@
 
 PATH=$PATH:~/.rd/bin
 
-~/.rd/bin/nerdctl \
+nerdctl \
   run \
     --privileged \
     --network host \
