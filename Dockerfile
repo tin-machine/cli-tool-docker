@@ -3,8 +3,9 @@ FROM ubuntu:24.04 AS neovim-build
 # マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
 # (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
 # gettext はmakeの前にインストールされている必要がある
+# 	git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
 RUN apt-get update && apt-get -y install \
-	git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
+	git gettext shfmt ninja-build gettext cmake unzip curl && \
   git clone https://github.com/neovim/neovim.git && \
   cd neovim && git fetch origin && git checkout release-0.9 && \
  	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
@@ -33,6 +34,14 @@ COPY --from=neovim-build /opt/neovim /opt/neovim
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
+# 以下は :checkhealth でのワーニングへの対応
+# mason.nvim: openjdk-11-jre, php, npm
+# neoconf.nvim
+#   jsonc の解決方法がわからない
+#   WARNING **TreeSitter jsonc** parser is not installed. Highlighting of jsonc files might be broken
+#   WARNING **lspconfig jsonls** is not installed? You won't get any auto completion in your settings files
+# WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
+#   :TSInstallFromGrammar を実行する
 RUN yes | unminimize && \
 	apt-get -y install \
 	language-pack-ja-base \
@@ -40,9 +49,9 @@ RUN yes | unminimize && \
 	locale-gen ja_JP.UTF-8 && \
 	apt-get -y install \
 	ansible \
-	awscli \
 	bat \
 	cargo \
+	composer \
 	curl \
 	dnsutils \
 	fd-find \
@@ -57,6 +66,7 @@ RUN yes | unminimize && \
 	jq \
 	libsixel-bin \
 	lv \
+	luarocks \
 	mutt \
 	mosh \
 	newsboat \
@@ -66,7 +76,9 @@ RUN yes | unminimize && \
 	manpages-ja-dev \
 	net-tools \
 	node-typescript \
+	openjdk-11-jre \
 	passwd \
+	php \
 	python3-full \
 	python3-pip \
 	python3-pynvim \
@@ -98,3 +110,8 @@ RUN yes | unminimize && \
 #
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc -11" are not executable.
 RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
+
+RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
+  unzip awscliv2.zip && \
+  sudo ./aws/install && \
+	rm -rf aws
