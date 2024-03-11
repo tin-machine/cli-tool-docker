@@ -8,6 +8,7 @@ nerdctl \
     --network host \
     --volume $HOME:$HOME \
     --user 0:0 \
+    --rm \
     -it \
       cli-tool-docker sh -c \
         "hostname localhost && \

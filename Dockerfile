@@ -115,3 +115,5 @@ RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv
   unzip awscliv2.zip && \
   sudo ./aws/install && \
 	rm -rf aws
+
+RUN apt-get -y remove neovim
