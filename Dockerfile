@@ -24,6 +24,7 @@ RUN apt-get update && apt-get -y install \
 
 FROM ubuntu:24.04
 
+ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL=ja_JP.UTF-8
 ENV LANGUAGE=ja_JP.UTF-8
 ENV LANG=ja_JP.UTF-8
@@ -42,11 +43,12 @@ COPY --from=neovim-build /opt/neovim /opt/neovim
 #   WARNING **lspconfig jsonls** is not installed? You won't get any auto completion in your settings files
 # WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
 #   :TSInstallFromGrammar を実行する
-RUN yes | unminimize && \
+RUN apt-get update && \
+  yes | unminimize && \
 	apt-get -y install \
-	language-pack-ja-base \
-	language-pack-ja && \
-	locale-gen ja_JP.UTF-8 && \
+	  language-pack-ja-base \
+	  language-pack-ja && \
+	  locale-gen ja_JP.UTF-8 && \
 	apt-get -y install \
 	ansible \
 	bat \
@@ -101,6 +103,8 @@ RUN yes | unminimize && \
  	cargo install stylua && \
   apt-get update && \
 	apt-get -y upgrade && \
+	apt-get clean && \
+  rm -rf /var/lib/apt/lists/* && \
   curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
   chmod +x /usr/local/bin/kubectl
 
