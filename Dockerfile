@@ -71,7 +71,6 @@ RUN	apt-get -y install \
 	luarocks \
 	mutt \
 	mosh \
-	newsboat \
 	ripgrep \
 	man-db \
 	manpages-ja \
