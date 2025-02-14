@@ -99,9 +99,9 @@ RUN apt-get update && \
 	yamllint \
 	zoxide \
 	make \
-	cmake && \
- 	cargo install stylua && \
-  apt-get update && \
+	cmake
+RUN 	cargo install stylua && \
+  	apt-get update && \
 	apt-get -y upgrade && \
 	apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
