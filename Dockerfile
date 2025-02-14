@@ -48,8 +48,8 @@ RUN apt-get update && \
 	apt-get -y install \
 	  language-pack-ja-base \
 	  language-pack-ja && \
-	  locale-gen ja_JP.UTF-8 && \
-	apt-get -y install \
+	  locale-gen ja_JP.UTF-8
+RUN	apt-get -y install \
 	ansible \
 	bat \
 	cargo \
