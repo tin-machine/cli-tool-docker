@@ -62,6 +62,7 @@ RUN apt-get update && \
 	  gh \
 	  git \
 	  golang \
+	  gosu \
 	  hugo \
 	  iproute2 \
 	  iputils-ping \
@@ -120,3 +121,13 @@ RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv
 	rm -rf aws
 
 RUN apt-get -y remove neovim
+
+# エントリーポイントスクリプトのコピー
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# エントリーポイントの設定
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# デフォルトのコマンド
+CMD ["bash", "-l"]
