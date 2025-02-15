@@ -48,64 +48,64 @@ RUN apt-get update && \
 	apt-get -y install \
 	  language-pack-ja-base \
 	  language-pack-ja && \
-	  locale-gen ja_JP.UTF-8
-RUN	apt-get -y install \
-	ansible \
-	bat \
-	cargo \
-	composer \
-	curl \
-	dnsutils \
-	fd-find \
-	fish \
-	fzf \
-	gh \
-	git \
-	golang \
-	hugo \
-	iproute2 \
-	iputils-ping \
-	jq \
-	libsixel-bin \
-	lv \
-	luarocks \
-	mutt \
-	mosh \
-	ripgrep \
-	man-db \
-	manpages-ja \
-	manpages-ja-dev \
-	net-tools \
-	node-typescript \
-	openjdk-11-jre \
-	passwd \
-	php \
-	python3-full \
-	python3-pip \
-	python3-pynvim \
-	ripgrep \
-	ruby \
-	screen \
-	shellcheck \
-	sudo \
-	terraform-switcher \
-	tmux \
-	tig \
-	trash-cli \
-	tree \
-	w3m-img \
-	wget \
-	yamllint \
-	zoxide \
-	make \
-	cmake
-RUN 	cargo install stylua && \
+	  locale-gen ja_JP.UTF-8 && \
+        apt-get -y install \
+	  ansible \
+	  bat \
+	  cargo \
+	  composer \
+	  curl \
+	  dnsutils \
+	  fd-find \
+	  fish \
+	  fzf \
+	  gh \
+	  git \
+	  golang \
+	  hugo \
+	  iproute2 \
+	  iputils-ping \
+	  jq \
+	  libsixel-bin \
+	  lv \
+	  luarocks \
+	  mutt \
+	  mosh \
+	  ripgrep \
+	  man-db \
+	  manpages-ja \
+	  manpages-ja-dev \
+	  net-tools \
+	  node-typescript \
+	  openjdk-11-jre \
+	  passwd \
+	  php \
+	  python3-full \
+	  python3-pip \
+	  python3-pynvim \
+	  ripgrep \
+	  ruby \
+	  screen \
+	  shellcheck \
+	  sudo \
+	  terraform-switcher \
+	  tmux \
+	  tig \
+	  trash-cli \
+	  tree \
+	  w3m-img \
+	  wget \
+	  yamllint \
+	  zoxide \
+	  make \
+	  cmake && \
+        cargo install stylua && \
   	apt-get update && \
 	apt-get -y upgrade && \
 	apt-get clean && \
-  rm -rf /var/lib/apt/lists/* && \
-  curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
-  chmod +x /usr/local/bin/kubectl
+  	rm -rf /var/lib/apt/lists/* && \
+  	curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
+  	chmod +x /usr/local/bin/kubectl
 
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
