@@ -16,10 +16,10 @@ if ! id -u ${USER_ID} >/dev/null 2>&1; then
 fi
 
 # ユーザーのホームディレクトリを取得
-USER_HOME=$(getent passwd ${USER_NAME} | cut -d: -f6)
+# USER_HOME=$(getent passwd ${USER_NAME} | cut -d: -f6)
 
 # ホームディレクトリの所有者を設定
-chown -R ${USER_ID}:${GROUP_ID} ${USER_HOME}
+# chown -R ${USER_ID}:${GROUP_ID} ${USER_HOME}
 
 # 指定したユーザーとしてコマンドを実行
 exec gosu ${USER_NAME} "$@"
