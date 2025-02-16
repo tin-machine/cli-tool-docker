@@ -22,4 +22,5 @@ fi
 # chown -R ${USER_ID}:${GROUP_ID} ${USER_HOME}
 
 # 指定したユーザーとしてコマンドを実行
-exec gosu ${USER_NAME} "$@"
+# exec gosu ${USER_NAME} "$@"
+exec "$@"
