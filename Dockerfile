@@ -127,7 +127,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # エントリーポイントの設定
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["stdbuf", "-i0", "-o0", "-e0", "/usr/local/bin/entrypoint.sh"]
 
 # デフォルトのコマンド
 CMD ["bash", "-l"]
