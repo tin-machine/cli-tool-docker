@@ -13,7 +13,7 @@ fi
 
 # ユーザーの作成
 if ! id -u ${USER_ID} >/dev/null 2>&1; then
-    useradd -m -s /bin/bash -u ${USER_ID} -g ${GROUP_ID} -d ${HOME_DIR} ${USER_NAME}
+    useradd -m -s /bin/bash -u ${USER_ID} -g ${GROUP_ID} -d ${HOME_DIR} -M ${USER_NAME}
 fi
 
 # 指定したユーザーとしてコマンドを実行
