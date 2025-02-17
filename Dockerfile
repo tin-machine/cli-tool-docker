@@ -7,8 +7,8 @@ FROM ubuntu:24.04 AS neovim-build
 RUN apt-get update && apt-get -y install \
 	git gettext shfmt ninja-build gettext cmake unzip curl && \
   git clone https://github.com/neovim/neovim.git && \
-  cd neovim && git fetch origin && git checkout release-0.9 && \
- 	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+  cd neovim && git fetch origin && git checkout release-0.10 && \
+ 	make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
  	make install
 
 # FROM ubuntu:24.04 AS terraform-install
