@@ -17,4 +17,4 @@ if ! id -u ${USER_ID} >/dev/null 2>&1; then
 fi
 
 # 指定したユーザーとしてコマンドを実行
-exec gosu ${USER_NAME} "$@"
+exec stdbuf -oL gosu ${USER_NAME} "$@"
