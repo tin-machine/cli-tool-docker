@@ -137,4 +137,5 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["stdbuf", "-oL", "/usr/local/bin/entrypoint.sh"]
 
 # デフォルトのコマンド
-CMD ["bash", "-l"]
+# CMD ["bash", "-l"]
+ CMD ["tail", "-F", "/dev/null"]
