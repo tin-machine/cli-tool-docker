@@ -95,6 +95,7 @@ RUN apt-get update && \
 	  ruby \
 	  screen \
 	  shellcheck \
+    strace \
 	  sudo \
 	  terraform-switcher \
 	  tmux \
