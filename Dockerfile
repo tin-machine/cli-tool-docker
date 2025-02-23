@@ -51,7 +51,6 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 # WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
 #   :TSInstallFromGrammar を実行する
 RUN apt-get update && \
-  yes | unminimize && \
 	apt-get -y install \
 	  language-pack-ja-base \
 	  language-pack-ja && \
