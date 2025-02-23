@@ -36,7 +36,7 @@ ENV LANGUAGE=ja_JP.UTF-8
 ENV LANG=ja_JP.UTF-8
 
 # Neovimとその依存ファイルをコピー
-COPY --from=neovim-build /opt/neovim /opt/neovim
+# COPY --from=neovim-build /opt/neovim /opt/neovim
 # COPY --from=terraform-install /terraform /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 
@@ -108,8 +108,14 @@ RUN apt-get update && \
 	  zoxide \
 	  make \
 	  cmake && \
-        cargo install stylua && \
-  	apt-get update && \
+   cargo install stylua && \
+  apt-get update && apt-get -y install \
+  	git gettext shfmt ninja-build gettext cmake unzip curl && \
+    git clone https://github.com/neovim/neovim.git && \
+    cd neovim && git fetch origin && git checkout release-0.10 && \
+ 	  make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+ 	  make install && \
+  apt-get update && \
 	apt-get -y upgrade && \
 	apt-get clean && \
   	rm -rf /var/lib/apt/lists/* && \
