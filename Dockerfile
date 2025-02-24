@@ -79,9 +79,6 @@ RUN apt-get update && \
 	  mutt \
 	  mosh \
 	  ripgrep \
-	  man-db \
-	  manpages-ja \
-	  manpages-ja-dev \
 	  net-tools \
 	  node-typescript \
 	  openjdk-11-jre \
@@ -112,7 +109,7 @@ RUN apt-get update && \
   	git gettext shfmt ninja-build gettext cmake unzip curl && \
     git clone https://github.com/neovim/neovim.git && \
     cd neovim && git fetch origin && git checkout release-0.10 && \
- 	  make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+ 	  make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED=ON" && \
  	  make install && \
   apt-get update && \
 	apt-get -y upgrade && \
