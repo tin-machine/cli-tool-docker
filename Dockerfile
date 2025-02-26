@@ -4,12 +4,12 @@ FROM ubuntu:25.04 AS neovim-build
 # (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
 # gettext はmakeの前にインストールされている必要がある
 # 	git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
-RUN apt-get update && apt-get -y install \
-	git gettext shfmt ninja-build gettext cmake unzip curl && \
-  git clone https://github.com/neovim/neovim.git && \
-  cd neovim && git fetch origin && git checkout release-0.10 && \
- 	make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
- 	make install
+# RUN apt-get update && apt-get -y install \
+# 	git gettext shfmt ninja-build gettext cmake unzip curl && \
+#   git clone https://github.com/neovim/neovim.git && \
+#   cd neovim && git fetch origin && git checkout release-0.10 && \
+#  	make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+#  	make install
 
 FROM ubuntu:25.04 AS lazygit
 RUN apt-get update && apt-get -y install curl
@@ -80,6 +80,7 @@ RUN apt-get update && \
 	  mosh \
 	  ripgrep \
 	  net-tools \
+    nkf \
 	  node-typescript \
 	  openjdk-11-jre \
 	  passwd \
@@ -104,19 +105,18 @@ RUN apt-get update && \
 	  zoxide \
 	  make \
 	  cmake && \
-   cargo install stylua && \
-  apt-get update && apt-get -y install \
-  	git gettext shfmt ninja-build gettext cmake unzip curl && \
+   cargo install stylua
+
+RUN apt-get update && apt-get -y install \
+    git gettext shfmt ninja-build gettext cmake unzip curl && \
     git clone https://github.com/neovim/neovim.git && \
-    cd neovim && git fetch origin && git checkout release-0.10 && \
- 	  make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED=ON" && \
- 	  make install && \
-  apt-get update && \
+  cd neovim && git fetch origin && git checkout release-0.10 && \
+ 	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED=ON" && \
+ 	make install
+RUN apt-get update && \
 	apt-get -y upgrade && \
 	apt-get clean && \
-  	rm -rf /var/lib/apt/lists/* && \
-  	curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
-  	chmod +x /usr/local/bin/kubectl
+  rm -rf /var/lib/apt/lists/*
 
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
@@ -125,10 +125,12 @@ RUN apt-get update && \
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc -11" are not executable.
 RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 
-RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-  unzip awscliv2.zip && \
-  sudo ./aws/install && \
-	rm -rf aws
+# RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
+#   unzip awscliv2.zip && \
+#   sudo ./aws/install && \
+# 	rm -rf aws && \
+#   curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
+#   chmod +x /usr/local/bin/kubectl
 
 # RUN apt-get -y remove neovim
 
