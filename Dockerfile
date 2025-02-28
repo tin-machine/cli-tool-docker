@@ -52,10 +52,10 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 #   :TSInstallFromGrammar を実行する
 RUN apt-get update && \
 	apt-get -y install \
-	  language-pack-ja-base \
-	  language-pack-ja && \
-	  locale-gen ja_JP.UTF-8 && \
-        apt-get -y install \
+	  language-pack-ja-base language-pack-ja && \
+	locale-gen ja_JP.UTF-8 && \
+  update-locale LANG=ja_JP.UTF-8 && \
+  apt-get -y install \
 	  ansible \
 	  bat \
 	  cargo \
@@ -106,6 +106,10 @@ RUN apt-get update && \
 	  make \
 	  cmake && \
    cargo install stylua
+
+RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
 
 RUN apt-get update && apt-get -y install \
     git gettext shfmt ninja-build gettext cmake unzip curl && \
