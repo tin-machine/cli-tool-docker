@@ -51,72 +51,78 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 # WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
 #   :TSInstallFromGrammar を実行する
 RUN apt-get update && \
-	apt-get -y install \
-	  language-pack-ja-base language-pack-ja && \
-	locale-gen ja_JP.UTF-8 && \
-  update-locale LANG=ja_JP.UTF-8 && \
-  apt-get -y install \
-	  ansible \
-	  bat \
-	  cargo \
-	  composer \
-	  curl \
-	  dnsutils \
-	  fd-find \
-	  fish \
-	  fzf \
-	  gh \
-	  git \
-	  golang \
-	  gosu \
-	  hugo \
-	  iproute2 \
-	  iputils-ping \
-	  jq \
-	  libsixel-bin \
-	  lv \
-	  luarocks \
-	  mutt \
-	  mosh \
-	  ripgrep \
-	  net-tools \
-    nkf \
-	  node-typescript \
-	  openjdk-11-jre \
-	  passwd \
-	  php \
-	  python3-full \
-	  python3-pip \
-	  python3-pynvim \
-	  ripgrep \
-	  ruby \
-	  screen \
-	  shellcheck \
-    strace \
-	  sudo \
-	  terraform-switcher \
-	  tmux \
-	  tig \
-	  trash-cli \
-	  tree \
-	  w3m-img \
-	  wget \
-	  yamllint \
-	  zoxide \
-	  make \
-	  cmake && \
-   cargo install stylua
+	  apt-get -y install \
+	    language-pack-ja-base language-pack-ja && \
+	  locale-gen ja_JP.UTF-8 && \
+    update-locale LANG=ja_JP.UTF-8 && \
+    apt-get -y install \
+	    ansible \
+	    bat \
+	    cargo \
+	    composer \
+	    curl \
+	    dnsutils \
+	    fd-find \
+	    fish \
+	    fzf \
+	    gh \
+	    git \
+	    golang \
+	    gosu \
+	    hugo \
+	    iproute2 \
+	    iputils-ping \
+	    jq \
+	    libsixel-bin \
+	    lv \
+	    luarocks \
+	    mutt \
+	    mosh \
+	    ripgrep \
+	    net-tools \
+      nkf \
+	    node-typescript \
+	    openjdk-11-jre \
+	    passwd \
+	    php \
+	    python3-full \
+	    python3-pip \
+	    python3-pynvim \
+	    ripgrep \
+	    ruby \
+	    screen \
+	    shellcheck \
+      strace \
+	    sudo \
+	    terraform-switcher \
+	    tmux \
+	    tig \
+	    trash-cli \
+	    tree \
+	    w3m-img \
+	    wget \
+	    yamllint \
+	    zoxide \
+	    make \
+	    cmake && \
+      cargo install stylua
 
 RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
 
+# 関連するライブラリは次を参照 https://packages.debian.org/sid/source/neovim
 RUN apt-get update && apt-get -y install \
-    git gettext shfmt ninja-build gettext cmake unzip curl && \
+      git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
+		  python3-pynvim \
+		  libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
+		  lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
+		  tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src \
     git clone https://github.com/neovim/neovim.git && \
-  cd neovim && git fetch origin && git checkout release-0.10 && \
- 	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED=ON" && \
- 	make install
+    cd neovim && git fetch origin && git checkout release-0.10 && \
+ 	  make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED=ON" && \
+ 	  make install
+
 RUN apt-get update && \
 	apt-get -y upgrade && \
 	apt-get clean && \
