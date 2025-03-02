@@ -52,7 +52,7 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 #   :TSInstallFromGrammar を実行する
 RUN apt-get update && \
 	apt-get -y install \
-	  language-pack-ja-base language-pack-ja tzdata && \
+	  locales tzdata language-pack-ja-base language-pack-ja && \
 	  locale-gen ja_JP.UTF-8 && \
     update-locale LANG=ja_JP.UTF-8 && \
     apt-get -y install \
