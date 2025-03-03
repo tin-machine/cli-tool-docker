@@ -121,7 +121,7 @@ RUN apt-get update && apt-get -y install \
       tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
 RUN git clone https://github.com/neovim/neovim.git && \
     cd neovim && git fetch origin && git checkout release-0.10 && \
- 	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED_LUAJIT=OFF"  && \
+ 	make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED_LUAJIT=OFF -DPREFER_LUA=On"  && \
  	make install
 
 RUN apt-get update && \
