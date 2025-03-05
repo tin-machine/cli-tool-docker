@@ -1,4 +1,4 @@
-FROM ubuntu:25.04 AS neovim-build
+FROM ubuntu:24.04 AS neovim-build
 # neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
 # マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
 # (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
