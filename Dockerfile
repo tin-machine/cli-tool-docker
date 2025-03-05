@@ -57,7 +57,9 @@ RUN apt-get update && \
 	  cargo \
 	  composer \
 	  curl \
+		direnv \
 	  dnsutils \
+		docker-compose \
 	  fd-find \
 	  fish \
 	  fzf \
@@ -69,11 +71,13 @@ RUN apt-get update && \
 	  iproute2 \
 	  iputils-ping \
 	  jq \
+		libmysqlclient-dev \
 	  libsixel-bin \
 	  lv \
 	  luarocks \
 	  mutt \
 	  mosh \
+		mysql-client \
 	  ripgrep \
 	  net-tools \
     nkf \
@@ -116,14 +120,15 @@ RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
 RUN apt-get update && apt-get -y install \
       git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
       python3-pynvim \
+			ca-certificates curl libcurl4-openssl-dev \
       libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
       lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
       tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
  	# make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED_LUAJIT=OFF -DPREFER_LUA=On"  && \
 RUN git clone https://github.com/neovim/neovim.git && \
     cd neovim && git fetch origin && git checkout release-0.10 && \
- 	  make && \
- 	  make install
+    make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim -DUSE_BUNDLED_LUAJIT=OFF -DPREFER_LUA=On"  && \
+    make install
 
 RUN apt-get update && \
 	apt-get -y upgrade && \
