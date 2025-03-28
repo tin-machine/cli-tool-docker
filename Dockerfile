@@ -134,6 +134,19 @@ RUN git clone https://github.com/neovim/neovim.git && \
     git checkout release-0.10 && \
     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
+RUN apt-get -y remove tmux && \
+    apt-get -y install \
+      autoconf \
+      automake \
+      bison \
+      libevent-dev \
+      ncurses-dev \
+      pkg-config && \
+    git clone https://github.com/tmux/tmux.git && \
+    cd tmux && \
+    sh autogen.sh && \
+    ./configure --enable-sixel && \
+    make && make install
 
 RUN apt-get update && \
     apt-get -y upgrade && \
