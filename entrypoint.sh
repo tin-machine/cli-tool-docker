@@ -17,4 +17,8 @@ if ! id -u ${USER_ID} >/dev/null 2>&1; then
 fi
 
 # 指定したユーザーとしてコマンドを実行
+# 引数が無ければ tail -F /dev/null を実行
+if [ $# -eq 0 ]; then
+    set -- tail -F /dev/null
+fi
 exec stdbuf -oL gosu ${USER_NAME} "$@"
