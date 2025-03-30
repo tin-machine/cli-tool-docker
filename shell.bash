@@ -66,7 +66,6 @@ if [ -z "$CONTAINER_ID" ]; then
         --env USER_NAME=$(whoami) \
         -w ${HOME} \
         --privileged \
-        -d \
         $( [ "$CONTAINER_CMD" = "nerdctl" ] && echo "--init" ) \
         "$IMAGE_NAME:latest"
 
