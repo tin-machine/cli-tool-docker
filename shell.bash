@@ -55,7 +55,7 @@ if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
     $CONTAINER_CMD \
       run \
-        --rm \
+        -d \
         --network host \
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --ipc shareable \
@@ -71,7 +71,6 @@ if [ -z "$CONTAINER_ID" ]; then
 
     # コンテナIDを再取得
     sleep 5
-    # CONTAINER_ID=$($CONTAINER_CMD ps -q -f "name=${CONTAINER_NAME}" | head -n 1)
     CONTAINER_ID=$($CONTAINER_CMD ps | grep $CONTAINER_NAME | awk '{print $1}' | head -n 1)
 fi
 
