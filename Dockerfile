@@ -21,7 +21,8 @@ RUN apt-get update && \
     make install
 
 FROM ubuntu:25.04 AS tmux-build
-RUN apt-get -y install \
+RUN apt-get update && \
+    apt-get -y install \
       autoconf \
       automake \
       bison \
