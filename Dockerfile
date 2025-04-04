@@ -17,13 +17,31 @@ RUN apt-get update && \
     cd neovim && \
     git fetch origin && \
     git checkout release-0.10 && \
-    make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make -j$(nproc) CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make install
+
+FROM ubuntu:25.04 AS tmux-build
+RUN apt-get -y install \
+      autoconf \
+      automake \
+      bison \
+      build-essential \
+      git \
+      libevent-dev \
+      ncurses-dev \
+      pkg-config && \
+    git clone https://github.com/tmux/tmux.git && \
+    cd tmux && \
+    sh autogen.sh && \
+    ./configure --enable-sixel --prefix=/opt/tmux && \
+    make -j$(nproc) && \
     make install
 
 FROM ubuntu:25.04 AS lazygit
 RUN apt-get update && \
     apt-get -y install curl
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
+    if [ -z "$LAZYGIT_VERSION" ]; then echo "Failed to get lazygit version"; exit 1; fi && \
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
     tar xf lazygit.tar.gz lazygit
 
@@ -41,11 +59,6 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 FROM ubuntu:25.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Neovimとその依存ファイルをコピー
-COPY --from=neovim-build /opt/neovim /opt/neovim
-# COPY --from=terraform-install /terraform /usr/local/bin/
-COPY --from=lazygit lazygit /usr/local/bin/lazygit
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
@@ -92,7 +105,6 @@ RUN apt-get update && \
       mutt \
       mosh \
       mysql-client \
-      ripgrep \
       net-tools \
       nkf \
       node-typescript \
@@ -147,19 +159,6 @@ RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
 #     git checkout release-0.10 && \
 #     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
 #     make install
-RUN apt-get -y remove tmux && \
-    apt-get -y install \
-      autoconf \
-      automake \
-      bison \
-      libevent-dev \
-      ncurses-dev \
-      pkg-config && \
-    git clone https://github.com/tmux/tmux.git && \
-    cd tmux && \
-    sh autogen.sh && \
-    ./configure --enable-sixel && \
-    make && make install
 
 RUN apt-get update && \
     apt-get -y upgrade && \
@@ -170,7 +169,7 @@ RUN apt-get update && \
 # 下記のエラーが出るため
 #  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
 #
-#  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc -11" are not executable.
+#  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
 RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 
 # RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
@@ -181,6 +180,12 @@ RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 #   chmod +x /usr/local/bin/kubectl
 
 # RUN apt-get -y remove neovim
+
+# Neovimとその依存ファイルをコピー
+COPY --from=neovim-build /opt/neovim /opt/neovim
+COPY --from=tmux-build /opt/tmux /opt/tmux
+COPY --from=lazygit lazygit /usr/local/bin/lazygit
+# COPY --from=terraform-install /terraform /usr/local/bin/
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
