@@ -96,6 +96,7 @@ RUN apt-get update && \
       gh \
       git \
       golang \
+      golang-docker-credential-helpers \
       gosu \
       hugo \
       iproute2 \
@@ -134,7 +135,9 @@ RUN apt-get update && \
       wget \
       yamllint \
       zoxide && \
-    apt-get -y remove neovim tmux && \
+# 独自のビルドオプションを付けたものをCOPYするので
+# 既存のパッケージからインストールしたものは削除する
+    apt-get -y remove neovim neovim-runtime tmux && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     cargo install stylua
