@@ -1,21 +1,31 @@
-# FROM ubuntu:24.04 AS neovim-build
 # neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
 # マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
 # (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
 # gettext はmakeの前にインストールされている必要がある
-# 	git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
-# RUN apt-get update && apt-get -y install \
-# 	git gettext shfmt ninja-build gettext cmake unzip curl && \
-#   git clone https://github.com/neovim/neovim.git && \
-#   cd neovim && git fetch origin && git checkout release-0.10 && \
-#  	make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-#  	make install
+#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
+FROM ubuntu:25.04 AS neovim-build
+RUN apt-get update && \
+    apt-get -y install \
+      cmake \
+      curl \
+      git \
+      gettext \
+      ninja-build \
+      shfmt \
+      unzip &&\
+    git clone https://github.com/neovim/neovim.git && \
+    cd neovim && \
+    git fetch origin && \
+    git checkout release-0.10 && \
+    make -j$(nproc) CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make install
 
-FROM ubuntu:24.04 AS lazygit
-RUN apt-get update && apt-get -y install curl
+FROM ubuntu:25.04 AS lazygit
+RUN apt-get update && \
+    apt-get -y install curl
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
-  curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
-  tar xf lazygit.tar.gz lazygit
+    curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
+    tar xf lazygit.tar.gz lazygit
 
 # FROM ubuntu:24.04 AS terraform-install
 # # teraformインストール
@@ -28,12 +38,12 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 #   curl -L https://releases.hashicorp.com/terraform/1.7.1/terraform_1.7.1_linux_arm64.zip -o terraform.zip && \
 #   unzip terraform.zip
 
-FROM ubuntu:24.04
+FROM ubuntu:25.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Neovimとその依存ファイルをコピー
-# COPY --from=neovim-build /opt/neovim /opt/neovim
+COPY --from=neovim-build /opt/neovim /opt/neovim
 # COPY --from=terraform-install /terraform /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 
@@ -48,66 +58,69 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 # WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
 #   :TSInstallFromGrammar を実行する
 RUN apt-get update && \
-  apt-get -y install \
-   locales tzdata language-pack-ja-base language-pack-ja && \
-   locale-gen ja_JP.UTF-8 && \
-  apt-get -y install \
-    ansible \
-    bat \
-    cargo \
-    composer \
-    curl \
-    direnv \
-    dnsutils \
-    docker.io \
-    docker-compose-v2 \
-    fd-find \
-    fish \
-    fzf \
-    gh \
-    git \
-    golang \
-    gosu \
-    hugo \
-    iproute2 \
-    iputils-ping \
-    jq \
-    libmysqlclient-dev \
-    libsixel-bin \
-    lv \
-    luarocks \
-    mutt \
-    mosh \
-    mysql-client \
-    ripgrep \
-    net-tools \
-    nkf \
-    node-typescript \
-    openjdk-11-jre \
-    passwd \
-    php \
-    python3-full \
-    python3-pip \
-    python3-pynvim \
-    rbenv \
-    ripgrep \
-    ruby \
-    screen \
-    shellcheck \
-    strace \
-    sudo \
-    terraform-switcher \
-    tmux \
-    tig \
-    trash-cli \
-    tree \
-    w3m-img \
-    wget \
-    yamllint \
-    zoxide \
-    make \
-  cmake && \
-  cargo install stylua
+    apt-get -y install \
+      language-pack-ja \
+      language-pack-ja-base \
+      locales \
+      tzdata && \
+    locale-gen ja_JP.UTF-8 && \
+    apt-get -y install \
+      ansible \
+      bat \
+      cargo \
+      composer \
+      curl \
+      direnv \
+      dnsutils \
+      docker.io \
+      docker-compose-v2 \
+      fd-find \
+      fish \
+      fzf \
+      gh \
+      git \
+      golang \
+      gosu \
+      hugo \
+      iproute2 \
+      iputils-ping \
+      jq \
+      libmysqlclient-dev \
+      libsixel-bin \
+      lv \
+      luarocks \
+      mutt \
+      mosh \
+      mysql-client \
+      ripgrep \
+      net-tools \
+      nkf \
+      node-typescript \
+      openjdk-11-jre \
+      passwd \
+      php \
+      python3-full \
+      python3-pip \
+      python3-pynvim \
+      rbenv \
+      ripgrep \
+      ruby \
+      screen \
+      shellcheck \
+      strace \
+      sudo \
+      terraform-switcher \
+      tmux \
+      tig \
+      trash-cli \
+      tree \
+      w3m-img \
+      wget \
+      yamllint \
+      zoxide \
+      make \
+    cmake && \
+    cargo install stylua
 
 ENV LC_ALL=ja_JP.UTF-8
 ENV LANGUAGE=ja_JP.UTF-8
@@ -117,23 +130,23 @@ RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
 
-# 関連するライブラリは次を参照 https://packages.debian.org/sid/source/neovim
-# 既存のneovimは削除する
-RUN apt-get update && \
-    apt-get -y remove neovim neovim-runtime && \
-    apt-get -y install \
-      git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
-      python3-pynvim \
-      ca-certificates curl libcurl4-openssl-dev \
-      libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
-      lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
-      tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
-RUN git clone https://github.com/neovim/neovim.git && \
-    cd neovim && \
-    git fetch origin && \
-    git checkout release-0.10 && \
-    make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-    make install
+# # 関連するライブラリは次を参照 https://packages.debian.org/sid/source/neovim
+# # 既存のneovimは削除する
+# RUN apt-get update && \
+#     apt-get -y remove neovim neovim-runtime && \
+#     apt-get -y install \
+#       git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
+#       python3-pynvim \
+#       ca-certificates curl libcurl4-openssl-dev \
+#       libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
+#       lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
+#       tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
+# RUN git clone https://github.com/neovim/neovim.git && \
+#     cd neovim && \
+#     git fetch origin && \
+#     git checkout release-0.10 && \
+#     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+#     make install
 RUN apt-get -y remove tmux && \
     apt-get -y install \
       autoconf \
