@@ -58,6 +58,38 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 #   curl -L https://releases.hashicorp.com/terraform/1.7.1/terraform_1.7.1_linux_arm64.zip -o terraform.zip && \
 #   unzip terraform.zip
 
+FROM ubuntu:25.04 AS nerdctl-install
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    tar
+
+# nerdctl のアーキテクチャ判定とインストール
+RUN set -euo pipefail && \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="amd64" ;; \
+      aarch64) ARCH="arm64" ;; \
+      armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    OS="linux" && \
+    echo "🔍 Fetching latest nerdctl version..." && \
+    LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
+    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
+    URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
+    TMPDIR=$(mktemp -d) && \
+    echo "📁 Created temp directory: $TMPDIR" && \
+    cd "$TMPDIR" && \
+    echo "📦 Downloading $FILENAME..." && \
+    curl -LO "$URL" && \
+    echo "📂 Extracting archive..." && \
+    tar -xzf "$FILENAME" && \
+    echo "🚀 Installing nerdctl to /usr/local/bin/..." && \
+    cp ./bin/* /usr/local/bin/ && \
+    cd / && rm -rf "$TMPDIR"
+
 FROM ubuntu:25.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -185,6 +217,7 @@ RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
 COPY --from=tmux-build /opt/tmux /opt/tmux
+COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 # COPY --from=terraform-install /terraform /usr/local/bin/
 
