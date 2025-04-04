@@ -29,8 +29,9 @@ RUN apt-get -y install \
       git \
       libevent-dev \
       ncurses-dev \
-      pkg-config && \
-    git clone https://github.com/tmux/tmux.git && \
+      pkg-config
+WORKDIR /build
+RUN git clone https://github.com/tmux/tmux.git && \
     cd tmux && \
     sh autogen.sh && \
     ./configure --enable-sixel --prefix=/opt/tmux && \
