@@ -220,6 +220,7 @@ COPY --from=tmux-build /opt/tmux /opt/tmux
 COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 # COPY --from=terraform-install /terraform /usr/local/bin/
+ENV PATH="/opt/neovim/bin:/opt/tmux/bin:$PATH"
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
