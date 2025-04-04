@@ -83,6 +83,7 @@ RUN apt-get update && \
       ansible \
       bat \
       cargo \
+      cmake \
       composer \
       curl \
       direnv \
@@ -104,6 +105,7 @@ RUN apt-get update && \
       libsixel-bin \
       lv \
       luarocks \
+      make \
       mutt \
       mosh \
       mysql-client \
@@ -131,9 +133,10 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide \
-      make \
-    cmake && \
+      zoxide && \
+    apt-get -y remove neovim tmux && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
     cargo install stylua
 
 ENV LC_ALL=ja_JP.UTF-8
@@ -162,11 +165,6 @@ RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
 #     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
 #     make install
 
-RUN apt-get update && \
-    apt-get -y upgrade && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
 #  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
@@ -180,8 +178,6 @@ RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 # 	rm -rf aws && \
 #   curl -L "https://dl.k8s.io/release/$(curl -LS https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl && \
 #   chmod +x /usr/local/bin/kubectl
-
-# RUN apt-get -y remove neovim
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
