@@ -191,6 +191,16 @@ RUN apt-get update && \
       wget \
       yamllint \
       zoxide && \
+# gcloud cli のインストール
+RUN apt-get update && apt-get install -y \
+    gnupg \
+    apt-transport-https && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+    > /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    apt-get update && \
+    apt-get install -y google-cloud-sdk && \
+    gcloud --version
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
     apt-get -y remove neovim neovim-runtime tmux && \
@@ -243,6 +253,8 @@ COPY --from=neovim-build /opt/neovim /opt/neovim
 COPY --from=tmux-build /opt/tmux /opt/tmux
 COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
+COPY --from=cni-install /opt/cni /opt/cni
+ENV PATH="/opt/cni/bin:$PATH"
 # COPY --from=terraform-install /terraform /usr/local/bin/
 ENV PATH="/opt/neovim/bin:/opt/tmux/bin:$PATH"
 
