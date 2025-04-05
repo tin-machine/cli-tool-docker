@@ -90,6 +90,30 @@ RUN set -euo pipefail && \
     cp ./bin/* /usr/local/bin/ && \
     cd / && rm -rf "$TMPDIR"
 
+FROM ubuntu:25.04 AS cni-install
+
+ARG CNI_VERSION=v1.3.0
+
+RUN apt-get update && apt-get install -y curl tar
+
+# アーキテクチャ判定とCNIプラグインのダウンロード＆展開
+RUN set -euo pipefail && \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="amd64" ;; \
+      aarch64) ARCH="arm64" ;; \
+      armv7l) echo "❌ armv7l is not supported by CNI plugins" && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    OS="linux" && \
+    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${ARCH}-${CNI_VERSION}.tgz" && \
+    INSTALL_DIR="/opt/cni/bin" && \
+
+    mkdir -p "$INSTALL_DIR" && \
+    echo "📁 Installing CNI plugins to $INSTALL_DIR from $URL" && \
+    curl -L "$URL" | tar -xz -C "$INSTALL_DIR" && \
+    ls -1 "$INSTALL_DIR"
+
 FROM ubuntu:25.04
 
 ENV DEBIAN_FRONTEND=noninteractive
