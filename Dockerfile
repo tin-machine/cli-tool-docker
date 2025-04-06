@@ -193,7 +193,7 @@ RUN apt-get update && \
       zoxide
 # gcloud cli のインストール
 RUN apt-get update && apt-get install -y \
-    gnupg && \
+    gnupg \
     apt-transport-https && \
     echo "deb [signed-by=/etc/apt/trusted.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
     > /etc/apt/sources.list.d/google-cloud-sdk.list && \
