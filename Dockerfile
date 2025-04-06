@@ -190,7 +190,7 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide \
+      zoxide
 # gcloud cli のインストール
 RUN apt-get update && apt-get install -y \
     gnupg && \
