@@ -197,7 +197,7 @@ RUN apt-get update && apt-get install -y \
     apt-transport-https && \
     echo "deb [signed-by=/etc/apt/trusted.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
     > /etc/apt/sources.list.d/google-cloud-sdk.list && \
-    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     apt-get update && \
     apt-get install -y google-cloud-sdk && \
     gcloud --version && \
