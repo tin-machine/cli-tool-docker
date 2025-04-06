@@ -259,9 +259,8 @@ COPY --from=tmux-build /opt/tmux /opt/tmux
 COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
-ENV PATH="/opt/cni/bin:$PATH"
 # COPY --from=terraform-install /terraform /usr/local/bin/
-ENV PATH="/opt/neovim/bin:/opt/tmux/bin:$PATH"
+ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

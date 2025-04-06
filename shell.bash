@@ -53,13 +53,35 @@ CONTAINER_ID=$($CONTAINER_CMD ps | grep $CONTAINER_NAME | awk '{print $1}' | hea
 
 if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
+
+    # ボリューム設定
+    VOLUME_OPTS="--volume /var/run/docker.sock:/var/run/docker.sock "
+    if [ -S /run/containerd/containerd.sock ]; then
+        VOLUME_OPTS+="--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock "
+    else
+        echo "⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
+    fi
+
+    if [ -d /var/lib/containerd ]; then
+        VOLUME_OPTS+="--volume /var/lib/containerd:/var/lib/containerd "
+    else
+        echo "⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
+    fi
+
+    if [ -d /etc/containerd ]; then
+        VOLUME_OPTS+="--volume /etc/containerd:/etc/containerd:ro "
+    else
+        echo "⚠️ /etc/containerd が見つかりません。" >&2
+    fi
+
     $CONTAINER_CMD \
       run \
         -d \
         --network host \
-        --volume /var/run/docker.sock:/var/run/docker.sock \
+        $VOLUME_OPTS \
         --ipc shareable \
         --volume $HOME:$HOME \
+        --volume /etc/resolv.conf:/etc/resolv.conf \
         --env HOME=${HOME} \
         --env UID=$(id -u) \
         --env GID=$(id -g) \
