@@ -193,14 +193,18 @@ RUN apt-get update && \
       zoxide
 # gcloud cli のインストール
 RUN apt-get update && apt-get install -y \
+    curl \
     gnupg \
+    ca-certificates \
     apt-transport-https && \
-    echo "deb [signed-by=/etc/apt/trusted.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-    > /etc/apt/sources.list.d/google-cloud-sdk.list && \
-    # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    mkdir -p /usr/share/keyrings && \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+      -o /usr/share/keyrings/cloud.google.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+      > /etc/apt/sources.list.d/google-cloud-sdk.list && \
     apt-get update && \
     apt-get install -y google-cloud-sdk && \
-    gcloud --version && \
+    gcloud --version
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
     apt-get -y remove neovim neovim-runtime tmux && \
