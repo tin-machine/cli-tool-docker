@@ -190,9 +190,9 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide && \
+      zoxide \
 # gcloud cli のインストール
-    apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     gnupg && \
     apt-transport-https && \
     echo "deb [signed-by=/etc/apt/trusted.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
