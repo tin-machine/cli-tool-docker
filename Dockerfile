@@ -102,7 +102,7 @@ RUN set -euo pipefail && \
     case "$ARCH" in \
       x86_64) ARCH="amd64" ;; \
       aarch64) ARCH="arm64" ;; \
-      armv7l) echo "❌ armv7l is not supported by CNI plugins" && exit 1 ;; \
+      armv7l) echo "❌ armv7l は CNI plugins が未サポートです。exit 0します" && exit 0 ;; \
       *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     OS="linux" && \
@@ -192,20 +192,8 @@ RUN apt-get update && \
       yamllint \
       zoxide
 # gcloud cli のインストール
-RUN apt-get update && apt-get install -y \
-    curl \
-    gnupg \
-    ca-certificates \
-    apt-transport-https && \
-    mkdir -p /usr/share/keyrings && \
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-      | gpg --dearmor \
-      -o /usr/share/keyrings/cloud.google.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-      > /etc/apt/sources.list.d/google-cloud-sdk.list && \
-    apt-get update && \
-    apt-get install -y google-cloud-sdk && \
-    gcloud --version && \
+ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk
+RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
     apt-get -y remove neovim neovim-runtime tmux && \
@@ -260,7 +248,7 @@ COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 # COPY --from=terraform-install /terraform /usr/local/bin/
-ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
+ENV PATH="/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
