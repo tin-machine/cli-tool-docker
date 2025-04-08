@@ -180,6 +180,7 @@ RUN apt-get update && \
       ruby \
       screen \
       shellcheck \
+      sqlite3 \
       strace \
       sudo \
       terraform-switcher \
