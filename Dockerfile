@@ -235,6 +235,18 @@ RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
 RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 
+ENV AQUA_ROOT=/opt/aqua
+RUN curl -sSfL https://raw.githubusercontent.com/aquaproj/aqua-installer/main/aqua-installer | bash -s -- -d $AQUA_ROOT
+# aqua.yaml 側で aqua 自体のバージョンを指定
+# 例:
+# packages:
+#   - name: aquaproj/aqua@v2.23.0
+COPY aqua.yaml aqua-lock.yaml /workspace/
+WORKDIR /workspace
+
+ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
+RUN aqua install
+
 # RUN	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
 #   unzip awscliv2.zip && \
 #   sudo ./aws/install && \
