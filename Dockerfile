@@ -241,7 +241,7 @@ RUN curl -sSfL https://raw.githubusercontent.com/aquaproj/aqua-installer/main/aq
 # 例:
 # packages:
 #   - name: aquaproj/aqua@v2.23.0
-COPY aqua.yaml aqua-lock.yaml /workspace/
+COPY aqua.yaml /workspace/
 WORKDIR /workspace
 
 ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
