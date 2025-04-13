@@ -1,2 +1,7 @@
+version: 1.0.0
+registries:
+  - type: standard
+    ref: v3.161.0 # または最新の aqua-registry バージョンに合わせて
+
 packages:
-  - name: aquaproj/aqua@v2.23.0
+  - name: aws/aws-cli@2.15.41
