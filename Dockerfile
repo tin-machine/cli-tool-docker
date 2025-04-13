@@ -168,6 +168,7 @@ RUN apt-get update && \
       mysql-client \
       net-tools \
       nkf \
+      nodejs \
       node-typescript \
       openjdk-11-jre \
       passwd \

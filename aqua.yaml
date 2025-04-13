@@ -4,10 +4,9 @@ registries:
     ref: v3.161.0 # または最新の aqua-registry バージョンに合わせて
 
 packages:
-  - name: aws/aws-cli@2.15.41
-  - name: nodejs/node@22.14.0
-  - name: x-motemen/ghq@v1.8.0        # ghq: Gitリポジトリ管理
-  - name: hadolint/hadolint@v2.12.0   # hadolint: Dockerfile linter
-  - name: helm/helm@v3.14.3           # helm: Kubernetes パッケージマネージャ
-  - name: kubernetes/kubectl@v1.29.3  # kubectl: Kubernetes CLI
-  - name: sharkdp/bat@v0.24.0         # bat: catの強化版（シンタックスハイライト付き）
+  - name: aws/aws-cli@2.26.1
+  - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
+  - name: hadolint/hadolint@v2.12.0 # hadolint: Dockerfile linter
+  - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
+  - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
+  - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
