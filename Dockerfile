@@ -170,6 +170,7 @@ RUN apt-get update && \
       nkf \
       nodejs \
       node-typescript \
+      npm \
       openjdk-11-jre \
       passwd \
       php \
