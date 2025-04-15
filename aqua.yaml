@@ -10,4 +10,4 @@ packages:
   - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
   - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
-  - name: astral-sh/uv@v0.6.14
+  - name: astral-sh/uv@0.6.14
