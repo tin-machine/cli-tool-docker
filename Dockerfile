@@ -263,7 +263,7 @@ WORKDIR /workspace
 ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
 RUN aqua install
 # MCP関連をuvでインストール
-RUN uv pip install \
+RUN uv pip install --system \
   openai-agents \
   mcp-server-git
 
