@@ -262,6 +262,8 @@ COPY aqua.yaml /workspace/
 WORKDIR /workspace
 ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
 RUN aqua install
+# mcphub用のツール追加
+RUN npm install -g mcp-hub@latest
 # uv仮想環境の作成
 RUN uv venv /opt/uv/venv
 # 仮想環境のパスを環境変数に追加
