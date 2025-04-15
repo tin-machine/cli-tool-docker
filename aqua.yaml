@@ -1,7 +1,7 @@
 version: 1.0.0
 registries:
   - type: standard
-    ref: v3.161.0 # または最新の aqua-registry バージョンに合わせて
+    ref: v4.346.0 # https://github.com/aquaproj/aqua-registry/releases
 
 packages:
   - name: aws/aws-cli@2.26.1
@@ -10,3 +10,4 @@ packages:
   - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
   - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
+  - name: astral-sh/uv@v0.6.14
