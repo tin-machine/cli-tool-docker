@@ -257,12 +257,12 @@ ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
 RUN aqua install
 # mcphub用のツール追加
 RUN npm install -g mcp-hub@latest
-# uv仮想環境の作成
-RUN uv venv /opt/uv/venv
-# 仮想環境のパスを環境変数に追加
-ENV PATH="/opt/uv/venv/bin:$PATH"
-# 必要なパッケージのインストール
-RUN uv pip install openai-agents mcp-server-git
+# # uv仮想環境の作成
+# RUN uv venv /opt/uv/venv
+# # 仮想環境のパスを環境変数に追加
+# ENV PATH="/opt/uv/venv/bin:$PATH"
+# # 必要なパッケージのインストール
+# RUN uv pip install openai-agents mcp-server-git
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
