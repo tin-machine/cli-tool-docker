@@ -244,17 +244,20 @@ COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 # COPY --from=terraform-install /terraform /usr/local/bin/
-ENV PATH="/opt/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
 
 ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
 RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
     rm aqua.tar.gz
-COPY aqua.yaml /workspace/
-WORKDIR /workspace
-ENV AQUA_GLOBAL_CONFIG=/workspace/aqua.yaml
+COPY aqua.yaml /usr/local/etc/
+ENV AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml
+ENV AQUA_ROOT_DIR=/usr/local/aqua
+WORKDIR /usr/local/etc
 RUN aqua install
+
+ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
+
 # mcphub用のツール追加
 RUN npm install -g mcp-hub@latest
 # # uv仮想環境の作成
@@ -263,6 +266,7 @@ RUN npm install -g mcp-hub@latest
 # ENV PATH="/opt/uv/venv/bin:$PATH"
 # # 必要なパッケージのインストール
 # RUN uv pip install openai-agents mcp-server-git
+
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
