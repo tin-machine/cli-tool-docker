@@ -48,6 +48,7 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
     tar xf lazygit.tar.gz lazygit
 
 FROM ubuntu:25.04 AS nerdctl-install
+ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -81,6 +82,7 @@ RUN set -euo pipefail && \
 FROM ubuntu:25.04 AS cni-install
 
 ARG CNI_VERSION=v1.3.0
+ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y curl tar
 
