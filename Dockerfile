@@ -48,7 +48,6 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
     tar xf lazygit.tar.gz lazygit
 
 FROM ubuntu:25.04 AS nerdctl-install
-ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -56,16 +55,18 @@ RUN apt-get update && apt-get install -y \
     tar
 
 # nerdctl のアーキテクチャ判定とインストール
-RUN echo ${TARGETARCH}
 RUN set -euo pipefail && \
-    case "${TARGETARCH}" in \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="amd64" ;; \
+      aarch64) ARCH="arm64" ;; \
       armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
-      *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     OS="linux" && \
     echo "🔍 Fetching latest nerdctl version..." && \
     LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
-    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${TARGETARCH}.tar.gz" && \
+    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
     URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
     TMPDIR=$(mktemp -d) && \
     echo "📁 Created temp directory: $TMPDIR" && \
@@ -79,19 +80,22 @@ RUN set -euo pipefail && \
     cd / && rm -rf "$TMPDIR"
 
 FROM ubuntu:25.04 AS cni-install
-ARG TARGETARCH
+
 ARG CNI_VERSION=v1.3.0
 
 RUN apt-get update && apt-get install -y curl tar
 
 # アーキテクチャ判定とCNIプラグインのダウンロード＆展開
 RUN set -euo pipefail && \
-    case "${TARGETARCH}" in \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="amd64" ;; \
+      aarch64) ARCH="arm64" ;; \
       armv7l) echo "❌ armv7l は CNI plugins が未サポートです。exit 0します" && exit 0 ;; \
-      *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     OS="linux" && \
-    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${TARGETARCH}-${CNI_VERSION}.tgz" && \
+    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${ARCH}-${CNI_VERSION}.tgz" && \
     INSTALL_DIR="/opt/cni/bin" && \
 
     mkdir -p "$INSTALL_DIR" && \
@@ -100,7 +104,6 @@ RUN set -euo pipefail && \
     ls -1 "$INSTALL_DIR"
 
 FROM ubuntu:25.04
-ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -230,6 +233,7 @@ COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 
+ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
 RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
