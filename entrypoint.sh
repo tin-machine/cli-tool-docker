@@ -16,13 +16,8 @@ if ! id -u ${USER_ID} >/dev/null 2>&1; then
     useradd -M -s /bin/bash -u ${USER_ID} -g ${GROUP_ID} -d ${HOME_DIR} ${USER_NAME}
 fi
 
-# /opt/aqua ディレクトリの存在確認と作成
-if [ ! -d /opt/aqua ]; then
-    mkdir -p /opt/aqua
-fi
-
 # Aqua ディレクトリの所有権を変更
-chown -R ${USER_ID}:${GROUP_ID} /opt/aqua
+chown -R ${USER_ID}:${GROUP_ID} /usr/local/aqua/metadata/pkgs/
 
 # 指定したユーザーとしてコマンドを実行
 # 引数が無ければ tail -F /dev/null を実行
