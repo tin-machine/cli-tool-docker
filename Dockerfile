@@ -47,17 +47,6 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
     tar xf lazygit.tar.gz lazygit
 
-# FROM ubuntu:24.04 AS terraform-install
-# # teraformインストール
-# # 下記の方法だとlsb_releaseでエラーが起きるのでバイナリをダウンロードする
-# # 	wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && \
-# # 	echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list && \
-# # 	apt-get update && apt install terraform && \
-# # https://developer.hashicorp.com/terraform/install
-# RUN	apt-get update && apt-get -y install curl unzip && \
-#   curl -L https://releases.hashicorp.com/terraform/1.7.1/terraform_1.7.1_linux_arm64.zip -o terraform.zip && \
-#   unzip terraform.zip
-
 FROM ubuntu:25.04 AS nerdctl-install
 
 RUN apt-get update && apt-get install -y \
@@ -67,17 +56,16 @@ RUN apt-get update && apt-get install -y \
 
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="amd64" ;; \
-      aarch64) ARCH="arm64" ;; \
+    case "${TARGETARCH}" in \
+      x86_64) ${TARGETARCH} ="amd64" ;; \
+      aarch64) ${TARGETARCH}="arm64" ;; \
       armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
-      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
     OS="linux" && \
     echo "🔍 Fetching latest nerdctl version..." && \
     LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
-    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
+    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${TARGETARCH}.tar.gz" && \
     URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
     TMPDIR=$(mktemp -d) && \
     echo "📁 Created temp directory: $TMPDIR" && \
@@ -98,15 +86,14 @@ RUN apt-get update && apt-get install -y curl tar
 
 # アーキテクチャ判定とCNIプラグインのダウンロード＆展開
 RUN set -euo pipefail && \
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="amd64" ;; \
-      aarch64) ARCH="arm64" ;; \
+    case "${TARGETARCH}" in \
+      x86_64) ${TARGETARCH}="amd64" ;; \
+      aarch64) ${TARGETARCH}="arm64" ;; \
       armv7l) echo "❌ armv7l は CNI plugins が未サポートです。exit 0します" && exit 0 ;; \
-      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
+      *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
     OS="linux" && \
-    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${ARCH}-${CNI_VERSION}.tgz" && \
+    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${TARGETARCH}-${CNI_VERSION}.tgz" && \
     INSTALL_DIR="/opt/cni/bin" && \
 
     mkdir -p "$INSTALL_DIR" && \
@@ -243,7 +230,6 @@ COPY --from=tmux-build /opt/tmux /opt/tmux
 COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
-# COPY --from=terraform-install /terraform /usr/local/bin/
 
 ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
@@ -266,7 +252,6 @@ RUN uv venv /opt/uv/venv
 ENV PATH="/opt/uv/venv/bin:$PATH"
 # 必要なパッケージのインストール
 RUN uv pip install openai-agents mcp-server-git
-
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
