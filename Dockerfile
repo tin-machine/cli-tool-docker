@@ -58,8 +58,6 @@ RUN apt-get update && apt-get install -y \
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
     case "${TARGETARCH}" in \
-      x86_64) ${TARGETARCH} ="amd64" ;; \
-      aarch64) ${TARGETARCH}="arm64" ;; \
       armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
       *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
@@ -80,17 +78,14 @@ RUN set -euo pipefail && \
     cd / && rm -rf "$TMPDIR"
 
 FROM ubuntu:25.04 AS cni-install
-
-ARG CNI_VERSION=v1.3.0
 ARG TARGETARCH
+ARG CNI_VERSION=v1.3.0
 
 RUN apt-get update && apt-get install -y curl tar
 
 # アーキテクチャ判定とCNIプラグインのダウンロード＆展開
 RUN set -euo pipefail && \
     case "${TARGETARCH}" in \
-      x86_64) ${TARGETARCH}="amd64" ;; \
-      aarch64) ${TARGETARCH}="arm64" ;; \
       armv7l) echo "❌ armv7l は CNI plugins が未サポートです。exit 0します" && exit 0 ;; \
       *) echo "❌ Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
@@ -104,6 +99,7 @@ RUN set -euo pipefail && \
     ls -1 "$INSTALL_DIR"
 
 FROM ubuntu:25.04
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -233,7 +229,6 @@ COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 
-ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
 RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
