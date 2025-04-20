@@ -18,6 +18,7 @@ fi
 
 # Aqua ディレクトリの所有権を変更
 chown -R ${USER_ID}:${GROUP_ID} /usr/local/aqua/metadata/pkgs/
+chown -R ${USER_ID}:${GROUP_ID} /usr/local/lib/node_modules/
 
 # 指定したユーザーとしてコマンドを実行
 # 引数が無ければ tail -F /dev/null を実行
