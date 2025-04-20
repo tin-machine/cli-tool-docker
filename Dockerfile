@@ -56,6 +56,7 @@ RUN apt-get update && apt-get install -y \
     tar
 
 # nerdctl のアーキテクチャ判定とインストール
+RUN echo ${TARGETARCH}
 RUN set -euo pipefail && \
     case "${TARGETARCH}" in \
       armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
