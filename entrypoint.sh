@@ -25,4 +25,4 @@ chown -R ${USER_ID}:${GROUP_ID} /usr/local/lib/node_modules/
 if [ $# -eq 0 ]; then
     set -- tail -F /dev/null
 fi
-exec stdbuf -oL gosu ${USER_NAME} "$@"
+exec gosu ${USER_NAME} "$@"
