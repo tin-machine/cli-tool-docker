@@ -247,8 +247,8 @@ RUN aqua install
 ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
 
 # Juliaのインストール
-curl -fsSL https://install.julialang.org | sh
-RUN juliaup add release
+RUN curl -fsSL https://install.julialang.org | sh && \
+    juliaup add release
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
