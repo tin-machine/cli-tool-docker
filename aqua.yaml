@@ -12,4 +12,5 @@ packages:
   - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
   - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
   - name: tofuutils/tenv@v4.4.0 # terraformバージョン管理
-  - name: volta-cli/volta@v2.0.2
+  - name: volta-cli/volta@v2.0.2 # nodeパッケージ管理
+  - name: JuliaLang/juliaup@v1.17.19 # Juliaバージョン管理

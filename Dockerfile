@@ -16,7 +16,7 @@ RUN apt-get update && \
     git clone https://github.com/neovim/neovim.git && \
     cd neovim && \
     git fetch origin && \
-    git checkout release-0.10 && \
+    git checkout release-0.11 && \
     make -j$(nproc) CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
 
@@ -160,7 +160,7 @@ RUN apt-get update && \
       nodejs \
       node-typescript \
       npm \
-      openjdk-11-jre \
+      openjdk-21-jdk \
       passwd \
       php \
       python3-full \
@@ -245,6 +245,9 @@ WORKDIR /usr/local/etc
 RUN aqua install
 
 ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
+
+# Juliaのインストール
+RUN juliaup add release
 
 # エントリーポイントスクリプトのコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
