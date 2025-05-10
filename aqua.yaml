@@ -13,4 +13,4 @@ packages:
   - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
   - name: tofuutils/tenv@v4.4.0 # terraformバージョン管理
   - name: volta-cli/volta@v2.0.2 # nodeパッケージ管理
-  - name: JuliaLang/juliaup@v1.17.19 # Juliaバージョン管理
+  - name: JuliaLang/juliaup # Juliaバージョン管理
