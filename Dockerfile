@@ -139,11 +139,13 @@ RUN apt-get update && \
       fish \
       fzf \
       gh \
+      ghostscript \
       git \
       golang \
       golang-docker-credential-helpers \
       gosu \
       hugo \
+      imagemagick \
       iproute2 \
       iputils-ping \
       jq \
@@ -174,6 +176,7 @@ RUN apt-get update && \
       sqlite3 \
       strace \
       sudo \
+      tectonic \
       terraform-switcher \
       tmux \
       tig \
