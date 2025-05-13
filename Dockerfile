@@ -176,7 +176,6 @@ RUN apt-get update && \
       sqlite3 \
       strace \
       sudo \
-      tectonic \
       terraform-switcher \
       tmux \
       tig \
