@@ -149,6 +149,7 @@ RUN apt-get update && \
       iproute2 \
       iputils-ping \
       jq \
+      latexmk \
       libmysqlclient-dev \
       libsixel-bin \
       lv \
@@ -177,6 +178,9 @@ RUN apt-get update && \
       strace \
       sudo \
       terraform-switcher \
+      texlive-latex-base \
+      texlive-latex-recommended \
+      texlive-fonts-recommended \
       tmux \
       tig \
       trash-cli \
