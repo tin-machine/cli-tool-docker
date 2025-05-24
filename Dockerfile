@@ -66,6 +66,7 @@ RUN set -euo pipefail && \
     OS="linux" && \
     echo "🔍 Fetching latest nerdctl version..." && \
     LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
+    echo "LATEST_VERSION is ${LATEST_VERSION}" && \
     FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
     URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
     TMPDIR=$(mktemp -d) && \
