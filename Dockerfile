@@ -17,7 +17,7 @@ RUN apt-get update && \
     cd neovim && \
     git fetch origin && \
     git checkout release-0.11 && \
-    make -j$(nproc) CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
 
 FROM ubuntu:25.04 AS tmux-build
