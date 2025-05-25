@@ -4,7 +4,7 @@
 # gettext はmakeの前にインストールされている必要がある
 #  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
 FROM ubuntu:25.04 AS neovim-build
-RUN echo '::group::nvim-build' \
+RUN echo '::group::nvim-build' && \
     apt-get update && \
     apt-get -y install \
       cmake \
