@@ -4,7 +4,7 @@
 # gettext はmakeの前にインストールされている必要がある
 #  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
 FROM ubuntu:25.04 AS neovim-build
-RUN echo '::group::nvim-build apt' && \
+RUN echo "::group::$ARCH nvim-build apt" && \
     apt-get update && \
     apt-get -y install \
       cmake \
@@ -23,7 +23,8 @@ RUN echo '::group::nvim-build apt' && \
     make install
 
 FROM ubuntu:25.04 AS tmux-build
-RUN apt-get update && \
+RUN echo "::group::$ARCH tmux-build" && \
+    apt-get update && \
     apt-get -y install \
       autoconf \
       automake \
@@ -39,19 +40,23 @@ RUN git clone https://github.com/tmux/tmux.git && \
     sh autogen.sh && \
     ./configure --enable-sixel --prefix=/opt/tmux && \
     make -j$(nproc) && \
-    make install
+    make install && \
+    echo '::endgroup::'
 
 FROM ubuntu:25.04 AS lazygit
-RUN apt-get update && \
+RUN echo "::group::$ARCH lazygit-build" && \
+    apt-get update && \
     apt-get -y install curl
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
     if [ -z "$LAZYGIT_VERSION" ]; then echo "Failed to get lazygit version"; exit 1; fi && \
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
-    tar xf lazygit.tar.gz lazygit
+    tar xf lazygit.tar.gz lazygit && \
+    echo '::endgroup::'
 
 FROM ubuntu:25.04 AS nerdctl-install
 
-RUN apt-get update && apt-get install -y \
+RUN echo "::group::$ARCH nerdctl-install" && \
+    apt-get update && apt-get install -y \
     curl \
     jq \
     tar
@@ -80,7 +85,8 @@ RUN set -euo pipefail && \
     tar -xzf "$FILENAME" && \
     echo "🚀 Installing nerdctl to /usr/local/bin/..." && \
     cp ./bin/* /usr/local/bin/ && \
-    cd / && rm -rf "$TMPDIR"
+    cd / && rm -rf "$TMPDIR" && \
+    echo '::endgroup::'
 
 FROM ubuntu:25.04 AS cni-install
 
