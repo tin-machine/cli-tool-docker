@@ -4,7 +4,8 @@
 # gettext はmakeの前にインストールされている必要がある
 #  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
 FROM ubuntu:25.04 AS neovim-build
-RUN apt-get update && \
+RUN echo '::group::nvim-build' \
+    apt-get update && \
     apt-get -y install \
       cmake \
       curl \
@@ -18,7 +19,8 @@ RUN apt-get update && \
     git fetch origin && \
     git checkout release-0.11 && \
     make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-    make install
+    make install \
+    echo '::endgroup::'
 
 FROM ubuntu:25.04 AS tmux-build
 RUN apt-get update && \
