@@ -12,12 +12,12 @@ RUN apt-get update && \
       gettext \
       ninja-build \
       shfmt \
-      unzip &&\
+      unzip && \
     git clone https://github.com/neovim/neovim.git && \
     cd neovim && \
     git fetch origin && \
     git checkout release-0.11 && \
-    make -j$(nproc) CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
 
 FROM ubuntu:25.04 AS tmux-build
@@ -66,6 +66,7 @@ RUN set -euo pipefail && \
     OS="linux" && \
     echo "🔍 Fetching latest nerdctl version..." && \
     LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
+    echo "LATEST_VERSION is ${LATEST_VERSION}" && \
     FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
     URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
     TMPDIR=$(mktemp -d) && \
