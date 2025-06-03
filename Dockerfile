@@ -47,13 +47,6 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
     tar xf lazygit.tar.gz lazygit
 
-FROM ubuntu:25.04 AS nerdctl-install
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    jq \
-    tar
-
 # yazi のインストール
 FROM ubuntu:25.04 AS yazi
 
@@ -78,6 +71,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
 
 # yazi 実行ファイルの確認用
 RUN /opt/cargo/bin/yazi --version
+
+FROM ubuntu:25.04 AS nerdctl-install
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    tar
 
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
