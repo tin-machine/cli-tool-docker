@@ -10,7 +10,6 @@ packages:
   - name: hadolint/hadolint@v2.12.0 # hadolint: Dockerfile linter
   - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
   - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
-  - name: rust-lang/rustup@1.28.2 # Rust ツールチェインインストーラー
   - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
   - name: tofuutils/tenv@v4.4.0 # terraformバージョン管理
   - name: volta-cli/volta@v2.0.2 # nodeパッケージ管理

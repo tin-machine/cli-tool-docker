@@ -54,6 +54,31 @@ RUN apt-get update && apt-get install -y \
     jq \
     tar
 
+# yazi のインストール
+FROM ubuntu:25.04 AS yazi
+
+# 必要なパッケージのインストール
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    libxcb-shape0-dev \
+    libxcb-xfixes0-dev \
+    ca-certificates
+
+# Rustのインストール（指定パスで）
+ENV CARGO_HOME=/opt/cargo \
+    RUSTUP_HOME=/opt/rustup \
+    PATH=/opt/cargo/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --no-modify-path && \
+    /opt/cargo/bin/cargo install yazi-fm
+
+# yazi 実行ファイルの確認用
+RUN /opt/cargo/bin/yazi --version
+
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -239,6 +264,8 @@ COPY --from=tmux-build /opt/tmux /opt/tmux
 COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
 COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
+COPY --from=yazi /opt/cargo /opt/cargo
+COPY --from=yazi /opt/rustup /opt/rustup
 
 ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
