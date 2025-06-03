@@ -6,11 +6,11 @@ registries:
 packages:
   - name: astral-sh/uv@0.6.14
   - name: aws/aws-cli@2.26.1
+  - name: gohugoio/hugo@v0.146.6 # GolangのCMS
   - name: hadolint/hadolint@v2.12.0 # hadolint: Dockerfile linter
   - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
-  - name: gohugoio/hugo@v0.146.6 # GolangのCMS
   - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
-  - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
   - name: tofuutils/tenv@v4.4.0 # terraformバージョン管理
   - name: volta-cli/volta@v2.0.2 # nodeパッケージ管理
+  - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
