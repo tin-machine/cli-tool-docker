@@ -1,12 +1,25 @@
 FROM ubuntu:25.04 AS build-base
 RUN apt-get update && \
     apt-get -y install \
+      autoconf \
+      automake \
+      bison \
+      build-essential \
+      ca-certificates \
       cmake \
       curl \
       git \
       gettext \
+      libevent-dev \
+      libssl-dev \
+      libxcb-shape0-dev \
+      libxcb-xfixes0-dev \
+      jq \
+      ncurses-dev \
       ninja-build \
       shfmt \
+      tar \
+      pkg-config \
       unzip
 
 # neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
@@ -22,17 +35,7 @@ RUN git clone https://github.com/neovim/neovim.git && \
     make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
 
-FROM ubuntu:25.04 AS tmux-build
-RUN apt-get update && \
-    apt-get -y install \
-      autoconf \
-      automake \
-      bison \
-      build-essential \
-      git \
-      libevent-dev \
-      ncurses-dev \
-      pkg-config
+FROM build-base AS tmux-build
 WORKDIR /build
 RUN git clone https://github.com/tmux/tmux.git && \
     cd tmux && \
@@ -41,27 +44,14 @@ RUN git clone https://github.com/tmux/tmux.git && \
     make -j$(nproc) && \
     make install
 
-FROM ubuntu:25.04 AS lazygit
-RUN apt-get update && \
-    apt-get -y install curl
+FROM build-base AS lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
     if [ -z "$LAZYGIT_VERSION" ]; then echo "Failed to get lazygit version"; exit 1; fi && \
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
     tar xf lazygit.tar.gz lazygit
 
 # yazi のインストール
-FROM ubuntu:25.04 AS yazi
-
-# 必要なパッケージのインストール
-RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    libxcb-shape0-dev \
-    libxcb-xfixes0-dev \
-    ca-certificates
-
+FROM build-base AS yazi
 # Rustのインストール（指定パスで）
 ENV CARGO_HOME=/opt/cargo \
     RUSTUP_HOME=/opt/rustup \
@@ -74,13 +64,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
 # yazi 実行ファイルの確認用
 RUN /opt/cargo/bin/yazi --version
 
-FROM ubuntu:25.04 AS nerdctl-install
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    jq \
-    tar
-
+FROM build-base AS nerdctl-install
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -107,12 +91,8 @@ RUN set -euo pipefail && \
     cp ./bin/* /usr/local/bin/ && \
     cd / && rm -rf "$TMPDIR"
 
-FROM ubuntu:25.04 AS cni-install
-
+FROM build-base AS cni-install
 ARG CNI_VERSION=v1.3.0
-
-RUN apt-get update && apt-get install -y curl tar
-
 # アーキテクチャ判定とCNIプラグインのダウンロード＆展開
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -178,6 +158,9 @@ RUN apt-get update && \
       iputils-ping \
       jq \
       latexmk \
+      libevent \
+      libxcb-shape0 \
+      libxcb-xfixes0 \
       libmysqlclient-dev \
       libsixel-bin \
       lv \
@@ -234,24 +217,6 @@ ENV LANG=ja_JP.UTF-8
 RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
-
-# # 関連するライブラリは次を参照 https://packages.debian.org/sid/source/neovim
-# # 既存のneovimは削除する
-# RUN apt-get update && \
-#     apt-get -y remove neovim neovim-runtime && \
-#     apt-get -y install \
-#       git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
-#       python3-pynvim \
-#       ca-certificates curl libcurl4-openssl-dev \
-#       libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
-#       lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
-#       tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
-# RUN git clone https://github.com/neovim/neovim.git && \
-#     cd neovim && \
-#     git fetch origin && \
-#     git checkout release-0.10 && \
-#     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-#     make install
 
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
