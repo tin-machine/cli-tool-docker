@@ -158,7 +158,6 @@ RUN apt-get update && \
       iputils-ping \
       jq \
       latexmk \
-      libevent-core \
       libxcb-shape0 \
       libxcb-xfixes0 \
       libmysqlclient-dev \
