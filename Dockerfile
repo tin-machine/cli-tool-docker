@@ -158,7 +158,7 @@ RUN apt-get update && \
       iputils-ping \
       jq \
       latexmk \
-      libevent \
+      libevent-core \
       libxcb-shape0 \
       libxcb-xfixes0 \
       libmysqlclient-dev \
@@ -210,6 +210,10 @@ RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --ins
     rm -rf /var/lib/apt/lists/* && \
     cargo install stylua
 
+# Juliaのインストール
+RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
+    /usr/local/julia/bin/juliaup add release
+
 ENV LC_ALL=ja_JP.UTF-8
 ENV LANGUAGE=ja_JP.UTF-8
 ENV LANG=ja_JP.UTF-8
@@ -246,10 +250,6 @@ WORKDIR /usr/local/etc
 RUN aqua install
 
 ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
-
-# Juliaのインストール
-RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
-    /usr/local/julia/bin/juliaup add release
 
 # エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
