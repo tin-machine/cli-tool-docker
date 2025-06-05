@@ -284,11 +284,9 @@ ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:
 RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
     /usr/local/julia/bin/juliaup add release
 
-# エントリーポイントスクリプトのコピー
+# エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# エントリーポイントの設定
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # デフォルトのコマンド
