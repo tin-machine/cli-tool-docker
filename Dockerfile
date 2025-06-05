@@ -1,9 +1,4 @@
-# neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
-# マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
-# (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
-# gettext はmakeの前にインストールされている必要がある
-#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
-FROM ubuntu:25.04 AS neovim-build
+FROM ubuntu:25.04 AS build-base
 RUN apt-get update && \
     apt-get -y install \
       cmake \
@@ -12,8 +7,15 @@ RUN apt-get update && \
       gettext \
       ninja-build \
       shfmt \
-      unzip && \
-    git clone https://github.com/neovim/neovim.git && \
+      unzip
+
+# neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
+# マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
+# (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
+# gettext はmakeの前にインストールされている必要がある
+#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
+FROM build-base AS neovim-build
+RUN git clone https://github.com/neovim/neovim.git && \
     cd neovim && \
     git fetch origin && \
     git checkout release-0.11 && \
