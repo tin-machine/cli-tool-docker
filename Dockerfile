@@ -198,7 +198,14 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide
+      zoxide && \
+    curl -fsSL https://install.julialang.org | \
+    sh -s -- --yes --path "/usr/local/julia" && \
+    /usr/local/julia/bin/juliaup add release && \
+    echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
+
 # gcloud cli のインストール
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk
 RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
@@ -209,17 +216,9 @@ RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --ins
     rm -rf /var/lib/apt/lists/* && \
     cargo install stylua
 
-# Juliaのインストール
-RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
-    /usr/local/julia/bin/juliaup add release
-
 ENV LC_ALL=ja_JP.UTF-8
 ENV LANGUAGE=ja_JP.UTF-8
 ENV LANG=ja_JP.UTF-8
-
-RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
 
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
