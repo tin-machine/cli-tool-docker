@@ -118,6 +118,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=ja_JP.UTF-8 \
     LANGUAGE=ja_JP.UTF-8 \
     LANG=ja_JP.UTF-8 \
+    AQUA_VERSION=v2.48.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     PATH="/usr/local/aqua/bin:\
@@ -134,6 +135,14 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 COPY --from=yazi /opt/cargo /opt/cargo
 COPY --from=yazi /opt/rustup /opt/rustup
+
+# aquaの設定ファイルをコピー
+COPY aqua.yaml /usr/local/etc/
+# aqua install のため WORKDIRを設定
+WORKDIR /usr/local/etc
+
+# Docker Buildx がサポートするアーキテクチャを指定
+ARG TARGETARCH
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
@@ -219,40 +228,32 @@ RUN apt-get update && \
       wget \
       yamllint \
       zoxide && \
+# juliaのインストール
     curl -fsSL https://install.julialang.org | \
     sh -s -- --yes --path "/usr/local/julia" && \
     /usr/local/julia/bin/juliaup add release && \
     echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
-
-RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
+    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+# Google Cloud SDKのインストール
+    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
     apt-get -y remove neovim neovim-runtime tmux && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    cargo install stylua
-
-
+    cargo install stylua && \
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
 #  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
 #
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
-RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
-
-
-ARG TARGETARCH
-ENV AQUA_VERSION=v2.48.2
-RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
+    cd /usr/bin/ && ln -s gcc-13 gcc-11 && \
+# aquaのインストール
+    curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
-    rm aqua.tar.gz
-COPY aqua.yaml /usr/local/etc/
-
-WORKDIR /usr/local/etc
-RUN aqua install
-
+    rm aqua.tar.gz && \
+    aqua install
 
 # エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
