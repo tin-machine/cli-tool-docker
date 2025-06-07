@@ -113,7 +113,27 @@ RUN set -euo pipefail && \
 
 FROM ubuntu:25.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
+    LC_ALL=ja_JP.UTF-8 \
+    LANGUAGE=ja_JP.UTF-8 \
+    LANG=ja_JP.UTF-8 \
+    AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
+    AQUA_ROOT_DIR=/usr/local/aqua \
+    PATH="/usr/local/aqua/bin:\
+/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:\
+/opt/neovim/bin:\
+/opt/tmux/bin:\
+/opt/cni/bin:$PATH"
+
+# Neovimとその依存ファイルをコピー
+COPY --from=neovim-build /opt/neovim /opt/neovim
+COPY --from=tmux-build /opt/tmux /opt/tmux
+COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
+COPY --from=lazygit lazygit /usr/local/bin/lazygit
+COPY --from=cni-install /opt/cni /opt/cni
+COPY --from=yazi /opt/cargo /opt/cargo
+COPY --from=yazi /opt/rustup /opt/rustup
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
@@ -206,8 +226,6 @@ RUN apt-get update && \
     echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
     echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
 
-# gcloud cli のインストール
-ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk
 RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
@@ -216,9 +234,6 @@ RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --ins
     rm -rf /var/lib/apt/lists/* && \
     cargo install stylua
 
-ENV LC_ALL=ja_JP.UTF-8
-ENV LANGUAGE=ja_JP.UTF-8
-ENV LANG=ja_JP.UTF-8
 
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
@@ -227,14 +242,6 @@ ENV LANG=ja_JP.UTF-8
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
 RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
 
-# Neovimとその依存ファイルをコピー
-COPY --from=neovim-build /opt/neovim /opt/neovim
-COPY --from=tmux-build /opt/tmux /opt/tmux
-COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
-COPY --from=lazygit lazygit /usr/local/bin/lazygit
-COPY --from=cni-install /opt/cni /opt/cni
-COPY --from=yazi /opt/cargo /opt/cargo
-COPY --from=yazi /opt/rustup /opt/rustup
 
 ARG TARGETARCH
 ENV AQUA_VERSION=v2.48.2
@@ -242,12 +249,10 @@ RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/downloa
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
     rm aqua.tar.gz
 COPY aqua.yaml /usr/local/etc/
-ENV AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml
-ENV AQUA_ROOT_DIR=/usr/local/aqua
+
 WORKDIR /usr/local/etc
 RUN aqua install
 
-ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
 
 # エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
