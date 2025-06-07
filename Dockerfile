@@ -1,36 +1,41 @@
-# neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
-# マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
-# (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
-# gettext はmakeの前にインストールされている必要がある
-#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
-FROM ubuntu:25.04 AS neovim-build
-RUN apt-get update && \
-    apt-get -y install \
-      cmake \
-      curl \
-      git \
-      gettext \
-      ninja-build \
-      shfmt \
-      unzip && \
-    git clone https://github.com/neovim/neovim.git && \
-    cd neovim && \
-    git fetch origin && \
-    git checkout release-0.11 && \
-    make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-    make install
-
-FROM ubuntu:25.04 AS tmux-build
+FROM ubuntu:25.04 AS build-base
 RUN apt-get update && \
     apt-get -y install \
       autoconf \
       automake \
       bison \
       build-essential \
+      ca-certificates \
+      cmake \
+      curl \
       git \
+      gettext \
       libevent-dev \
+      libssl-dev \
+      libxcb-shape0-dev \
+      libxcb-xfixes0-dev \
+      jq \
       ncurses-dev \
-      pkg-config
+      ninja-build \
+      shfmt \
+      tar \
+      pkg-config \
+      unzip
+
+# neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
+# マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
+# (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
+# gettext はmakeの前にインストールされている必要がある
+#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
+FROM build-base AS neovim-build
+RUN git clone https://github.com/neovim/neovim.git && \
+    cd neovim && \
+    git fetch origin && \
+    git checkout release-0.11 && \
+    make -j$(nproc) VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make install
+
+FROM build-base AS tmux-build
 WORKDIR /build
 RUN git clone https://github.com/tmux/tmux.git && \
     cd tmux && \
@@ -39,27 +44,14 @@ RUN git clone https://github.com/tmux/tmux.git && \
     make -j$(nproc) && \
     make install
 
-FROM ubuntu:25.04 AS lazygit
-RUN apt-get update && \
-    apt-get -y install curl
+FROM build-base AS lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
     if [ -z "$LAZYGIT_VERSION" ]; then echo "Failed to get lazygit version"; exit 1; fi && \
     curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
     tar xf lazygit.tar.gz lazygit
 
 # yazi のインストール
-FROM ubuntu:25.04 AS yazi
-
-# 必要なパッケージのインストール
-RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    libxcb-shape0-dev \
-    libxcb-xfixes0-dev \
-    ca-certificates
-
+FROM build-base AS yazi
 # Rustのインストール（指定パスで）
 ENV CARGO_HOME=/opt/cargo \
     RUSTUP_HOME=/opt/rustup \
@@ -67,18 +59,10 @@ ENV CARGO_HOME=/opt/cargo \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
     sh -s -- -y --no-modify-path && \
-    /opt/cargo/bin/cargo install yazi-fm
+    /opt/cargo/bin/cargo install yazi-fm && \
+    /opt/cargo/bin/yazi --version
 
-# yazi 実行ファイルの確認用
-RUN /opt/cargo/bin/yazi --version
-
-FROM ubuntu:25.04 AS nerdctl-install
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    jq \
-    tar
-
+FROM build-base AS nerdctl-install
 # nerdctl のアーキテクチャ判定とインストール
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -105,12 +89,8 @@ RUN set -euo pipefail && \
     cp ./bin/* /usr/local/bin/ && \
     cd / && rm -rf "$TMPDIR"
 
-FROM ubuntu:25.04 AS cni-install
-
+FROM build-base AS cni-install
 ARG CNI_VERSION=v1.3.0
-
-RUN apt-get update && apt-get install -y curl tar
-
 # アーキテクチャ判定とCNIプラグインのダウンロード＆展開
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -131,7 +111,27 @@ RUN set -euo pipefail && \
 
 FROM ubuntu:25.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
+    LC_ALL=ja_JP.UTF-8 \
+    LANGUAGE=ja_JP.UTF-8 \
+    LANG=ja_JP.UTF-8 \
+    AQUA_VERSION=v2.48.2 \
+    AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
+    AQUA_ROOT_DIR=/usr/local/aqua \
+    PATH="/usr/local/aqua/bin:\
+/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:\
+/opt/neovim/bin:\
+/opt/tmux/bin:\
+/opt/cni/bin:$PATH"
+
+# aquaの設定ファイルをコピー
+COPY aqua.yaml /usr/local/etc/
+# aqua install のため WORKDIRを設定
+WORKDIR /usr/local/etc
+
+# Docker Buildx がサポートするアーキテクチャを指定
+ARG TARGETARCH
 
 # unminimizeしている理由としては、manページ、ロケールを追加したいため
 # locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
@@ -176,6 +176,8 @@ RUN apt-get update && \
       iputils-ping \
       jq \
       latexmk \
+      libxcb-shape0 \
+      libxcb-xfixes0 \
       libmysqlclient-dev \
       libsixel-bin \
       lv \
@@ -214,49 +216,33 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide
-# gcloud cli のインストール
-ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk
-RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
+      zoxide && \
+# juliaのインストール
+    curl -fsSL https://install.julialang.org | \
+    sh -s -- --yes --path "/usr/local/julia" && \
+    /usr/local/julia/bin/juliaup add release && \
+    echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
+# Google Cloud SDKのインストール
+    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
     apt-get -y remove neovim neovim-runtime tmux && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    cargo install stylua
-
-ENV LC_ALL=ja_JP.UTF-8
-ENV LANGUAGE=ja_JP.UTF-8
-ENV LANG=ja_JP.UTF-8
-
-RUN echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh
-
-# # 関連するライブラリは次を参照 https://packages.debian.org/sid/source/neovim
-# # 既存のneovimは削除する
-# RUN apt-get update && \
-#     apt-get -y remove neovim neovim-runtime && \
-#     apt-get -y install \
-#       git gettext shfmt unzip ninja-build gettext cmake curl build-essential \
-#       python3-pynvim \
-#       ca-certificates curl libcurl4-openssl-dev \
-#       libacl1-dev libluajit-5.1-dev libmsgpack-dev libnss-wrapper libtermkey-dev libtree-sitter-dev libunibilium-dev libuv1-dev libvterm-dev \
-#       lua-bitop lua-busted lua-coxpcall lua-filesystem lua-inspect lua-lpeg lua-luv-dev lua-mpack luajit \
-#       tree-sitter-c-src tree-sitter-lua-src tree-sitter-query-src tree-sitter-vim-src tree-sitter-vimdoc-src
-# RUN git clone https://github.com/neovim/neovim.git && \
-#     cd neovim && \
-#     git fetch origin && \
-#     git checkout release-0.10 && \
-#     make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
-#     make install
-
+    cargo install stylua && \
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
 #  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
 #
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
-RUN	cd /usr/bin/ && ln -s gcc-13 gcc-11
+    cd /usr/bin/ && ln -s gcc-13 gcc-11 && \
+# aquaのインストール
+    curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
+    tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
+    rm aqua.tar.gz && \
+    aqua install
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
@@ -267,28 +253,9 @@ COPY --from=cni-install /opt/cni /opt/cni
 COPY --from=yazi /opt/cargo /opt/cargo
 COPY --from=yazi /opt/rustup /opt/rustup
 
-ARG TARGETARCH
-ENV AQUA_VERSION=v2.48.2
-RUN curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
-    tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
-    rm aqua.tar.gz
-COPY aqua.yaml /usr/local/etc/
-ENV AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml
-ENV AQUA_ROOT_DIR=/usr/local/aqua
-WORKDIR /usr/local/etc
-RUN aqua install
-
-ENV PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:$PATH"
-
-# Juliaのインストール
-RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
-    /usr/local/julia/bin/juliaup add release
-
-# エントリーポイントスクリプトのコピー
+# エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# エントリーポイントの設定
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # デフォルトのコマンド
