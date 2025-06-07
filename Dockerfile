@@ -59,10 +59,8 @@ ENV CARGO_HOME=/opt/cargo \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
     sh -s -- -y --no-modify-path && \
-    /opt/cargo/bin/cargo install yazi-fm
-
-# yazi 実行ファイルの確認用
-RUN /opt/cargo/bin/yazi --version
+    /opt/cargo/bin/cargo install yazi-fm && \
+    /opt/cargo/bin/yazi --version
 
 FROM build-base AS nerdctl-install
 # nerdctl のアーキテクチャ判定とインストール
@@ -126,15 +124,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 /opt/neovim/bin:\
 /opt/tmux/bin:\
 /opt/cni/bin:$PATH"
-
-# Neovimとその依存ファイルをコピー
-COPY --from=neovim-build /opt/neovim /opt/neovim
-COPY --from=tmux-build /opt/tmux /opt/tmux
-COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
-COPY --from=lazygit lazygit /usr/local/bin/lazygit
-COPY --from=cni-install /opt/cni /opt/cni
-COPY --from=yazi /opt/cargo /opt/cargo
-COPY --from=yazi /opt/rustup /opt/rustup
 
 # aquaの設定ファイルをコピー
 COPY aqua.yaml /usr/local/etc/
@@ -254,6 +243,15 @@ RUN apt-get update && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
     rm aqua.tar.gz && \
     aqua install
+
+# Neovimとその依存ファイルをコピー
+COPY --from=neovim-build /opt/neovim /opt/neovim
+COPY --from=tmux-build /opt/tmux /opt/tmux
+COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
+COPY --from=lazygit lazygit /usr/local/bin/lazygit
+COPY --from=cni-install /opt/cni /opt/cni
+COPY --from=yazi /opt/cargo /opt/cargo
+COPY --from=yazi /opt/rustup /opt/rustup
 
 # エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
