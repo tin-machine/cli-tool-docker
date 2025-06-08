@@ -74,11 +74,16 @@ if [ -z "$CONTAINER_ID" ]; then
         echo "⚠️ /etc/containerd が見つかりません。" >&2
     fi
 
+    INIT_OPT=()
+    if [ "$CONTAINER_CMD" = "nerdctl" ]; then
+        INIT_OPT+=(--init)
+    fi
+
     $CONTAINER_CMD \
       run \
         -d \
         --network host \
-        $VOLUME_OPTS \
+        "$VOLUME_OPTS" \
         --ipc shareable \
         --volume "$HOME:$HOME" \
         --volume /etc/resolv.conf:/etc/resolv.conf \
@@ -88,7 +93,7 @@ if [ -z "$CONTAINER_ID" ]; then
         --env USER_NAME="$(whoami)" \
         -w "${HOME}" \
         --privileged \
-        $( [ "$CONTAINER_CMD" = "nerdctl" ] && echo "--init" ) \
+        "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 
     # コンテナIDを再取得
