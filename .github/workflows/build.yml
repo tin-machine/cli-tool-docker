@@ -12,11 +12,6 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  id-token: read
-
-
 jobs:
   lint:
     name: Lint YAML & Shell
