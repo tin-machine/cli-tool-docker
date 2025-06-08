@@ -1,0 +1,7 @@
+extends: default
+
+rules:
+  line-length:
+    max: 150  # または
+    level: warning  # エラーではなく警告に
+    allow-non-breakable-words: true
