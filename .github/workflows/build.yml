@@ -18,12 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Run yamllint
         uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: '.github/workflows/'
-
       - name: Run shellcheck on entrypoint.sh
         uses: azohra/shell-linter@v0.6.0
         with:
