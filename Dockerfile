@@ -192,6 +192,8 @@ RUN apt-get update && \
       node-typescript \
       npm \
       openjdk-21-jdk \
+      p7zip-full \
+      p7zip-rar \
       passwd \
       php \
       python3-full \
