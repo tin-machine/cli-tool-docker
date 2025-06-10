@@ -53,26 +53,24 @@ if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
 
     # ボリューム設定
-    VOLUME_OPTS="--volume /var/run/docker.sock:/var/run/docker.sock "
+    VOLUME_OPTS=(--volume /var/run/docker.sock:/var/run/docker.sock)
     if [ -S /run/containerd/containerd.sock ]; then
-        VOLUME_OPTS+="--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock "
+        VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
     else
         echo "⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
     fi
 
     if [ -d /var/lib/containerd ]; then
-        VOLUME_OPTS+="--volume /var/lib/containerd:/var/lib/containerd "
+        VOLUME_OPTS+=(--volume /var/lib/containerd:/var/lib/containerd)
     else
         echo "⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
     fi
 
     if [ -d /etc/containerd ]; then
-        VOLUME_OPTS+="--volume /etc/containerd:/etc/containerd:ro "
+        VOLUME_OPTS+=(--volume /etc/containerd:/etc/containerd:ro)
     else
         echo " /etc/containerd が見つかりません。" >&2
     fi
-
-    echo "$VOLUME_OPTS"
 
     INIT_OPT=()
     if [ "$CONTAINER_CMD" = "nerdctl" ]; then
@@ -83,7 +81,7 @@ if [ -z "$CONTAINER_ID" ]; then
       run \
         -d \
         --network host \
-        $VOLUME_OPTS \
+        "${VOLUME_OPTS[@]}" \
         --ipc shareable \
         --volume "$HOME:$HOME" \
         --volume /etc/resolv.conf:/etc/resolv.conf \
