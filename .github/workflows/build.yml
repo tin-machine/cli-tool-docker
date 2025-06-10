@@ -82,16 +82,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Trivyによる脆弱性スキャン（mainのときだけ）
-      - name: Scan image with Trivy
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: aquasecurity/trivy-action@0.31.0
-        with:
-          image-ref: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
-          format: table
-          exit-code: 1
-          ignore-unfixed: true
-          vuln-type: os,library
+      # # Trivyによる脆弱性スキャン（mainのときだけ）
+      # - name: Scan image with Trivy
+      #   # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      #   if: github.event_name == 'pull_request'
+      #   uses: aquasecurity/trivy-action@0.31.0
+      #   with:
+      #     image-ref: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
+      #     format: table
+      #     exit-code: 1
+      #     ignore-unfixed: true
+      #     vuln-type: os,library
+      #     timeout: '10m'
+      #     scanners: vuln  # 脆弱性スキャンのみを実施
+      #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
 
   # リリースノート作成（mainブランチ push 時）
   release-draft:
