@@ -42,7 +42,6 @@ if [ "$ARCH" = "Darwin" ]; then
         echo "mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        echo $SCRIPT_DIR
         $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
     fi
 fi
@@ -70,8 +69,10 @@ if [ -z "$CONTAINER_ID" ]; then
     if [ -d /etc/containerd ]; then
         VOLUME_OPTS+="--volume /etc/containerd:/etc/containerd:ro "
     else
-        echo "⚠️ /etc/containerd が見つかりません。" >&2
+        echo " /etc/containerd が見つかりません。" >&2
     fi
+
+    echo "$VOLUME_OPTS"
 
     INIT_OPT=()
     if [ "$CONTAINER_CMD" = "nerdctl" ]; then
@@ -84,15 +85,15 @@ if [ -z "$CONTAINER_ID" ]; then
         --network host \
         $VOLUME_OPTS \
         --ipc shareable \
-        --volume $HOME:$HOME \
+        --volume "$HOME:$HOME" \
         --volume /etc/resolv.conf:/etc/resolv.conf \
-        --env HOME=${HOME} \
-        --env UID=$(id -u) \
-        --env GID=$(id -g) \
-        --env USER_NAME=$(whoami) \
-        -w ${HOME} \
+        --env HOME="${HOME}" \
+        --env UID="$(id -u)" \
+        --env GID="$(id -g)" \
+        --env USER_NAME="$(whoami)" \
+        -w "${HOME}" \
         --privileged \
-	"${INIT_OPT[@]}" \
+        "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 
     # コンテナIDを再取得
@@ -109,5 +110,5 @@ else
 fi
 
 # シェルを実行
-$CONTAINER_CMD exec -it --env TERM=${TERM} --user $(id -u):$(id -g) "$CONTAINER_ID" "$SHELL_CMD" "$@"
+$CONTAINER_CMD exec -it --env TERM="${TERM}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
 # $CONTAINER_CMD exec --privileged -it --env TERM=${TERM} "$CONTAINER_ID" "$SHELL_CMD" "$@"
