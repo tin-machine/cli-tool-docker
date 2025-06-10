@@ -13,7 +13,7 @@ else
 fi
 
 # コンテナランタイムが起動しているかチェック
-if ! "$CONTAINER_CMD" info >/dev/null 2>&1; then
+if ! $CONTAINER_CMD info >/dev/null 2>&1; then
     echo "Error: コンテナランタイムが起動していないか、正常に動作していません。"
     exit 10
 fi
@@ -38,40 +38,38 @@ esac
 
 # mac（Darwin）の場合、イメージが存在しなければDockerfileからビルドする
 if [ "$ARCH" = "Darwin" ]; then
-    if ! "$CONTAINER_CMD" image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
+    if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
         echo "mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        echo "$SCRIPT_DIR"
         $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
     fi
 fi
 
-
 # 実行中のコンテナIDを取得
-CONTAINER_ID=$("$CONTAINER_CMD" ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
 
 if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
 
     # ボリューム設定
-    VOLUME_OPTS="--volume /var/run/docker.sock:/var/run/docker.sock "
+    VOLUME_OPTS=(--volume /var/run/docker.sock:/var/run/docker.sock)
     if [ -S /run/containerd/containerd.sock ]; then
-        VOLUME_OPTS+="--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock "
+        VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
     else
         echo "⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
     fi
 
     if [ -d /var/lib/containerd ]; then
-        VOLUME_OPTS+="--volume /var/lib/containerd:/var/lib/containerd "
+        VOLUME_OPTS+=(--volume /var/lib/containerd:/var/lib/containerd)
     else
         echo "⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
     fi
 
     if [ -d /etc/containerd ]; then
-        VOLUME_OPTS+="--volume /etc/containerd:/etc/containerd:ro "
+        VOLUME_OPTS+=(--volume /etc/containerd:/etc/containerd:ro)
     else
-        echo "⚠️ /etc/containerd が見つかりません。" >&2
+        echo " /etc/containerd が見つかりません。" >&2
     fi
 
     INIT_OPT=()
@@ -83,7 +81,7 @@ if [ -z "$CONTAINER_ID" ]; then
       run \
         -d \
         --network host \
-        "$VOLUME_OPTS" \
+        "${VOLUME_OPTS[@]}" \
         --ipc shareable \
         --volume "$HOME:$HOME" \
         --volume /etc/resolv.conf:/etc/resolv.conf \
@@ -98,7 +96,7 @@ if [ -z "$CONTAINER_ID" ]; then
 
     # コンテナIDを再取得
     sleep 5
-    CONTAINER_ID=$("$CONTAINER_CMD" ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+    CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
 fi
 
 # 第一引数があればシェルコマンドとして使い、なければデフォルトはbash
