@@ -13,7 +13,7 @@ else
 fi
 
 # コンテナランタイムが起動しているかチェック
-if ! "$CONTAINER_CMD" info >/dev/null 2>&1; then
+if ! $CONTAINER_CMD info >/dev/null 2>&1; then
     echo "Error: コンテナランタイムが起動していないか、正常に動作していません。"
     exit 10
 fi
@@ -38,18 +38,17 @@ esac
 
 # mac（Darwin）の場合、イメージが存在しなければDockerfileからビルドする
 if [ "$ARCH" = "Darwin" ]; then
-    if ! "$CONTAINER_CMD" image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
+    if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
         echo "mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        echo "$SCRIPT_DIR"
+        echo $SCRIPT_DIR
         $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
     fi
 fi
 
-
 # 実行中のコンテナIDを取得
-CONTAINER_ID=$("$CONTAINER_CMD" ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
 
 if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
@@ -83,22 +82,22 @@ if [ -z "$CONTAINER_ID" ]; then
       run \
         -d \
         --network host \
-        "$VOLUME_OPTS" \
+        $VOLUME_OPTS \
         --ipc shareable \
-        --volume "$HOME:$HOME" \
+        --volume $HOME:$HOME \
         --volume /etc/resolv.conf:/etc/resolv.conf \
-        --env HOME="${HOME}" \
-        --env UID="$(id -u)" \
-        --env GID="$(id -g)" \
-        --env USER_NAME="$(whoami)" \
-        -w "${HOME}" \
+        --env HOME=${HOME} \
+        --env UID=$(id -u) \
+        --env GID=$(id -g) \
+        --env USER_NAME=$(whoami) \
+        -w ${HOME} \
         --privileged \
-        "${INIT_OPT[@]}" \
+	"${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 
     # コンテナIDを再取得
     sleep 5
-    CONTAINER_ID=$("$CONTAINER_CMD" ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+    CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
 fi
 
 # 第一引数があればシェルコマンドとして使い、なければデフォルトはbash
@@ -110,5 +109,5 @@ else
 fi
 
 # シェルを実行
-$CONTAINER_CMD exec -it --env TERM="${TERM}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
+$CONTAINER_CMD exec -it --env TERM=${TERM} --user $(id -u):$(id -g) "$CONTAINER_ID" "$SHELL_CMD" "$@"
 # $CONTAINER_CMD exec --privileged -it --env TERM=${TERM} "$CONTAINER_ID" "$SHELL_CMD" "$@"
