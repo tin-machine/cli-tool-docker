@@ -10,7 +10,7 @@ wait_for_container() {
     while [ $attempt -lt $max_attempts ]; do
         CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
             grep "$CONTAINER_NAME" | \
-            sort -k3 -r | \
+            sort -k4 -r | \
             head -n 1 | \
             awk '{print $1}')
         if [ -n "$CONTAINER_ID" ]; then
@@ -71,9 +71,9 @@ if [ "$ARCH" = "Darwin" ]; then
 fi
 
 # 実行中のコンテナIDを取得（最新のものを選択）
-CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Names}}\t{{.CreatedAt}}" | \
+CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
     grep "$CONTAINER_NAME" | \
-    sort -k3 -r | \
+    sort -k4 -r | \
     head -n 1 | \
     awk '{print $1}')
 
