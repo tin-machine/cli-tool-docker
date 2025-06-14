@@ -123,12 +123,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 /usr/local/google-cloud-sdk/google-cloud-sdk/bin/:\
 /opt/neovim/bin:\
 /opt/tmux/bin:\
-/opt/cni/bin:$PATH"
+/opt/cni/bin:\
+/opt/npm-global/bin:\
+$PATH"
 
 # aquaの設定ファイルをコピー
 COPY aqua.yaml /usr/local/etc/
-# aqua install のため WORKDIRを設定
-WORKDIR /usr/local/etc
 
 # Docker Buildx がサポートするアーキテクチャを指定
 ARG TARGETARCH
@@ -188,9 +188,6 @@ RUN apt-get update && \
       mysql-client \
       net-tools \
       nkf \
-      nodejs \
-      node-typescript \
-      npm \
       openjdk-21-jdk \
       p7zip-full \
       p7zip-rar \
@@ -244,7 +241,15 @@ RUN apt-get update && \
     curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
     rm aqua.tar.gz && \
-    aqua install
+    cd /usr/local/etc/ && \
+    aqua install && \
+# npmのパッケージを /opt/npm-global にインストール
+    mkdir -p /opt/npm-global && \
+    npm config set prefix '/opt/npm-global' && \
+    echo 'prefix=/opt/npm-global' >> /etc/npmrc && \
+    echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh && \
+    chmod +x /etc/profile.d/npm-global.sh && \
+    npm install -g @anthropic-ai/claude-code
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
