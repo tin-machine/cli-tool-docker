@@ -113,9 +113,6 @@ FROM ubuntu:25.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
-    LC_ALL=ja_JP.UTF-8 \
-    LANGUAGE=ja_JP.UTF-8 \
-    LANG=ja_JP.UTF-8 \
     AQUA_VERSION=v2.48.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
@@ -220,9 +217,6 @@ RUN apt-get update && \
     curl -fsSL https://install.julialang.org | \
     sh -s -- --yes --path "/usr/local/julia" && \
     /usr/local/julia/bin/juliaup add release && \
-    echo "export LANG=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LANGUAGE=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
-    echo "export LC_ALL=ja_JP.UTF-8" >> /etc/profile.d/locale.sh && \
 # Google Cloud SDKのインストール
     curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
 # 独自のビルドオプションを付けたものをCOPYするので
