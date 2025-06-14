@@ -83,7 +83,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-# # Trivyによる脆弱性スキャン（mainのときだけ）
+      # # Trivyによる脆弱性スキャン（mainのときだけ）
       # - name: Scan image with Trivy
       #   # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       #   if: github.event_name == 'pull_request'
@@ -110,4 +110,3 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

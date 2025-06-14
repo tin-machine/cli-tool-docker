@@ -16,4 +16,3 @@ packages:
   - name: volta-cli/volta@v2.0.2  # nodeパッケージ管理
   - name: x-motemen/ghq@v1.8.0  # ghq: Gitリポジトリ管理
   - name: nodejs/node@v24.2.0
-
