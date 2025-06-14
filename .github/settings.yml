@@ -1,3 +1,4 @@
+---
 repository:
   name: cli-tool-docker
   description: "CLI Tool Docker Environment"
@@ -44,7 +45,7 @@ branches:
       allow_deletions: false
       required_linear_history: true  # リニアな履歴を強制
       require_conversation_resolution: true  # レビューコメントの解決を必須
-  
+
   - name: master
     protection:
       required_status_checks:

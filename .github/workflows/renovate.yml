@@ -1,6 +1,7 @@
+---
 name: Renovate
 
-on:
+'on':
   schedule:
     - cron: '0 3 * * *'  # 毎日午前3時に実行
   workflow_dispatch:  # 手動実行も可能

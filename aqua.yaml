@@ -1,17 +1,19 @@
+---
 version: 1.0.0
 registries:
   - type: standard
-    ref: v4.346.0 # https://github.com/aquaproj/aqua-registry/releases
+    ref: v4.346.0  # https://github.com/aquaproj/aqua-registry/releases
 
 packages:
   - name: astral-sh/uv@0.6.14
   - name: aws/aws-cli@2.26.1
-  - name: gohugoio/hugo@v0.146.6 # GolangのCMS
-  - name: hadolint/hadolint@v2.12.0 # hadolint: Dockerfile linter
-  - name: helm/helm@v3.17.3 # helm: Kubernetes パッケージマネージャ
-  - name: kubernetes/kubectl@v1.32.3 # kubectl: Kubernetes CLI
-  - name: sharkdp/bat@v0.25.0 # bat: catの強化版（シンタックスハイライト付き）
-  - name: tofuutils/tenv@v4.4.0 # terraformバージョン管理
-  - name: volta-cli/volta@v2.0.2 # nodeパッケージ管理
-  - name: x-motemen/ghq@v1.8.0 # ghq: Gitリポジトリ管理
+  - name: gohugoio/hugo@v0.146.6  # GolangのCMS
+  - name: hadolint/hadolint@v2.12.0  # hadolint: Dockerfile linter
+  - name: helm/helm@v3.17.3  # helm: Kubernetes パッケージマネージャ
+  - name: kubernetes/kubectl@v1.32.3  # kubectl: Kubernetes CLI
+  - name: sharkdp/bat@v0.25.0  # bat: catの強化版（シンタックスハイライト付き）
+  - name: tofuutils/tenv@v4.4.0  # terraformバージョン管理
+  - name: volta-cli/volta@v2.0.2  # nodeパッケージ管理
+  - name: x-motemen/ghq@v1.8.0  # ghq: Gitリポジトリ管理
   - name: nodejs/node@v24.2.0
+
