@@ -1,6 +1,7 @@
+---
 name: Build and Push Multi-Platform Docker Image
 
-on:
+'on':
   push:
     branches:
       - main

@@ -1,0 +1,72 @@
+---
+repository:
+  name: cli-tool-docker
+  description: "CLI Tool Docker Environment"
+  homepage: ""
+  topics: docker, cli, development
+  private: false  # プライベートリポジトリにする場合は true
+  has_issues: true
+  has_projects: true
+  has_wiki: false
+  has_downloads: true
+  default_branch: main
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false  # rebaseマージも禁止（squashのみ許可）
+  delete_branch_on_merge: true
+  enable_automated_security_fixes: true
+  enable_vulnerability_alerts: true
+  # セキュリティ強化設定
+  allow_auto_merge: false  # 自動マージを禁止
+  allow_update_branch: false  # Update branchボタンを無効
+
+branches:
+  - name: main
+    protection:
+      required_status_checks:
+        strict: true
+        contexts: []  # CI/CDチェックがある場合はここに追加
+      enforce_admins: false  # 管理者はルールをバイパス可能
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true  # CODEOWNERSファイルでの承認を必須
+        dismissal_restrictions:
+          users: []
+          teams: []
+        bypass_pull_request_allowances:  # PRの要件をバイパスできるユーザー
+          users: []  # 必要に応じてあなたのユーザー名を追加
+          teams: []
+      restrictions:  # プッシュできるユーザー/チームを制限
+        users: ["tin-machine"]  # ここにあなたのユーザー名
+        teams: []
+        apps: ["renovate"]  # Renovateアプリを許可
+      allow_force_pushes: false
+      allow_deletions: false
+      required_linear_history: true  # リニアな履歴を強制
+      require_conversation_resolution: true  # レビューコメントの解決を必須
+
+  - name: master
+    protection:
+      required_status_checks:
+        strict: true
+        contexts: []
+      enforce_admins: false
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+        dismissal_restrictions:
+          users: []
+          teams: []
+        bypass_pull_request_allowances:
+          users: []
+          teams: []
+      restrictions:
+        users: ["tin-machine"]
+        teams: []
+        apps: ["renovate"]
+      allow_force_pushes: false
+      allow_deletions: false
+      required_linear_history: true
+      require_conversation_resolution: true
