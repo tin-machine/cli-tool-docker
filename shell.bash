@@ -2,6 +2,30 @@
 
 exec 2> ~/error.log
 
+# コンテナの起動を待機する関数
+wait_for_container() {
+    local max_attempts=30
+    local attempt=0
+
+    while [ $attempt -lt $max_attempts ]; do
+        CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
+            grep "$CONTAINER_NAME" | \
+            sort -k3 -r | \
+            head -n 1 | \
+            awk '{print $1}')
+        if [ -n "$CONTAINER_ID" ]; then
+            # コンテナが実際に応答可能か確認
+            if $CONTAINER_CMD exec "$CONTAINER_ID" echo "ready" >/dev/null 2>&1; then
+                return 0
+            fi
+        fi
+        sleep 0.5
+        attempt=$((attempt + 1))
+    done
+    echo "Error: コンテナの起動に失敗しました" >&2
+    exit 1
+}
+
 # コンテナ管理ツールを決定
 if command -v docker >/dev/null 2>&1; then
     CONTAINER_CMD="docker"
@@ -46,8 +70,12 @@ if [ "$ARCH" = "Darwin" ]; then
     fi
 fi
 
-# 実行中のコンテナIDを取得
-CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+# 実行中のコンテナIDを取得（最新のものを選択）
+CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Names}}\t{{.CreatedAt}}" | \
+    grep "$CONTAINER_NAME" | \
+    sort -k3 -r | \
+    head -n 1 | \
+    awk '{print $1}')
 
 if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
@@ -94,9 +122,8 @@ if [ -z "$CONTAINER_ID" ]; then
         "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 
-    # コンテナIDを再取得
-    sleep 5
-    CONTAINER_ID=$($CONTAINER_CMD ps | grep "$CONTAINER_NAME" | awk '{print $1}' | head -n 1)
+    # コンテナの起動を待機
+    wait_for_container
 fi
 
 # 第一引数があればシェルコマンドとして使い、なければデフォルトはbash
