@@ -1,7 +1,5 @@
 #!/bin/bash
 
-exec 2> ~/error.log
-
 # コンテナの起動を待機する関数
 wait_for_container() {
     local max_attempts=30
@@ -134,6 +132,15 @@ else
     SHELL_CMD="bash"
 fi
 
+# ロケール設定（デフォルトは ja_JP.UTF-8、環境変数があればそれを使用）
+LOCALE_LC_ALL="${LC_ALL:-ja_JP.UTF-8}"
+
+# タイムゾーン設定（デフォルトは Asia/Tokyo、環境変数があればそれを使用）
+TIMEZONE="${TZ:-Asia/Tokyo}"
+
+# TERM設定（デフォルトはscreen-256color-bce 、環境変数があればそれを使用）
+TERMINAL="${TERM:-screen-256color-bce}"
+
 # シェルを実行
-$CONTAINER_CMD exec -it --env TERM="${TERM}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
-# $CONTAINER_CMD exec --privileged -it --env TERM=${TERM} "$CONTAINER_ID" "$SHELL_CMD" "$@"
+$CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
+# $CONTAINER_CMD exec -it  --env LC_ALL="ja_JP.UTF-8" --env TZ="Asia/Tokyo" --env TERM=${TERM}  --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
