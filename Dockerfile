@@ -247,7 +247,7 @@ RUN apt-get update && \
 
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
 RUN ARCH=$(uname -m) && \
-    curl -L "https://github.com/theimpostor/osc/releases/download/v0.48./osc_v0.4.8_linux_${ARCH}.tar.gz" \
+    curl -L "https://github.com/theimpostor/osc/releases/download/v0.4.8/osc_v0.4.8_linux_${ARCH}.tar.gz" \
     -o /tmp/osc.tar.gz && \
     tar -xzf /tmp/osc.tar.gz -C /tmp && \
     mv /tmp/osc /usr/local/bin/osc && \
