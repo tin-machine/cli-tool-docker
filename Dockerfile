@@ -243,10 +243,8 @@ RUN apt-get update && \
     echo 'prefix=/opt/npm-global' >> /etc/npmrc && \
     echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh && \
     chmod +x /etc/profile.d/npm-global.sh && \
-    npm install -g @anthropic-ai/claude-code
-
+    npm install -g @anthropic-ai/claude-code && \
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
-RUN ARCH=$(uname -m) && \
     curl -L "https://github.com/theimpostor/osc/releases/download/v0.4.8/osc_Linux_$(uname -m).tar.gz" \
       -o /tmp/osc.tar.gz && \
     tar -xzf /tmp/osc.tar.gz -C /tmp && \
