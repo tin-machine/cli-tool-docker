@@ -245,6 +245,15 @@ RUN apt-get update && \
     chmod +x /etc/profile.d/npm-global.sh && \
     npm install -g @anthropic-ai/claude-code
 
+# OSC52を使ってコピーアンドペーストできるコマンドを追加
+RUN ARCH=$(uname -m) && \
+    curl -L "https://github.com/theimpostor/osc/releases/download/v0.48./osc_v0.4.8_linux_${ARCH}.tar.gz" \
+    -o /tmp/osc.tar.gz && \
+    tar -xzf /tmp/osc.tar.gz -C /tmp && \
+    mv /tmp/osc /usr/local/bin/osc && \
+    chmod +x /usr/local/bin/osc && \
+    rm /tmp/osc.tar.gz
+
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
 COPY --from=tmux-build /opt/tmux /opt/tmux
