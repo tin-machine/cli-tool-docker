@@ -6,7 +6,7 @@ wait_for_container() {
     local attempt=0
 
     while [ $attempt -lt $max_attempts ]; do
-        CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
+        CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
             grep "$CONTAINER_NAME" | \
             sort -k4 -r | \
             head -n 1 | \
@@ -69,7 +69,7 @@ if [ "$ARCH" = "Darwin" ]; then
 fi
 
 # 実行中のコンテナIDを取得（最新のものを選択）
-CONTAINER_ID=$($CONTAINER_CMD ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
+CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}} {{.Image}} {{.Names}} {{.CreatedAt}}" | \
     grep "$CONTAINER_NAME" | \
     sort -k4 -r | \
     head -n 1 | \
@@ -143,4 +143,4 @@ TERMINAL="${TERM:-screen-256color-bce}"
 
 # シェルを実行
 $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
-# $CONTAINER_CMD exec -it  --env LC_ALL="ja_JP.UTF-8" --env TZ="Asia/Tokyo" --env TERM=${TERM}  --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
+# $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
