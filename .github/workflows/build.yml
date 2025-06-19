@@ -69,7 +69,7 @@ jobs:
           platforms: linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
       # mainブランチへのpushの場合のタグ
       - name: Build and Push Docker Image (for main branch)
@@ -81,7 +81,7 @@ jobs:
           platforms: linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
       # # Trivyによる脆弱性スキャン（mainのときだけ）
       # - name: Scan image with Trivy
