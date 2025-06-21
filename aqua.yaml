@@ -17,3 +17,4 @@ packages:
   - name: x-motemen/ghq@v1.8.0  # ghq: Gitリポジトリ管理
   - name: nodejs/node@v24.2.0
   - name: suzuki-shunsuke/pinact@v3.3.0
+  - name: kayac/ecspresso

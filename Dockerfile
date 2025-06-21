@@ -109,8 +109,36 @@ RUN set -euo pipefail && \
     curl -L "$URL" | tar -xz -C "$INSTALL_DIR" && \
     ls -1 "$INSTALL_DIR"
 
-FROM ubuntu:25.04
+FROM build-base AS go-cli-install
+ARG GHQ_VERSION=v1.8.0
+ARG OSC_VERSION=v0.4.8
+RUN set -euo pipefail && \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="amd64" ;; \
+      aarch64) ARCH="arm64" ;; \
+      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    OS=linux && \
+# ghqインストール
+    FILENAME="ghq_${OS}_${ARCH}.zip" && \
+    URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
+    curl -sSL "$URL" -o ghq.zip && \
+    unzip ghq.zip && \
+    mv ghq_linux_amd64/ghq /usr/local/bin/ghq && \
+    chmod +x /usr/local/bin/ghq && \
+    rm ghq.zip
+# OSC52を使ってコピーアンドペーストできるコマンドを追加
+RUN ARCH=$(uname -m) && \
+    FILENAME="osc_Linux_${ARCH}.tar.gz" && \
+    curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
+      -o osc.tar.gz && \
+    tar -xzf osc.tar.gz -C /tmp && \
+    mv /tmp/osc /usr/local/bin/osc && \
+    chmod +x /usr/local/bin/osc && \
+    rm osc.tar.gz
 
+FROM ubuntu:25.04
 ENV DEBIAN_FRONTEND=noninteractive \
     CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_VERSION=v2.48.2 \
@@ -243,14 +271,7 @@ RUN apt-get update && \
     echo 'prefix=/opt/npm-global' >> /etc/npmrc && \
     echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh && \
     chmod +x /etc/profile.d/npm-global.sh && \
-    npm install -g @anthropic-ai/claude-code && \
-# OSC52を使ってコピーアンドペーストできるコマンドを追加
-    curl -L "https://github.com/theimpostor/osc/releases/download/v0.4.8/osc_Linux_$(uname -m).tar.gz" \
-      -o /tmp/osc.tar.gz && \
-    tar -xzf /tmp/osc.tar.gz -C /tmp && \
-    mv /tmp/osc /usr/local/bin/osc && \
-    chmod +x /usr/local/bin/osc && \
-    rm /tmp/osc.tar.gz
+    npm install -g @anthropic-ai/claude-code
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
@@ -260,6 +281,8 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 COPY --from=yazi /opt/cargo /opt/cargo
 COPY --from=yazi /opt/rustup /opt/rustup
+COPY --from=go-cli-install /usr/local/bin/ghq /usr/local/bin/ghq
+COPY --from=go-cli-install /usr/local/bin/osc /usr/local/bin/osc
 
 # エントリーポイントの設定
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
