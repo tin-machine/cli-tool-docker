@@ -121,13 +121,14 @@ RUN set -euo pipefail && \
     esac && \
     OS=linux && \
 # ghqインストール
-    FILENAME="ghq_${OS}_${ARCH}.tar.gz" && \
+    FILENAME="ghq_${OS}_${ARCH}.zip" && \
+    https://github.com/x-motemen/ghq/releases/download/v1.8.0/ghq_linux_arm64.zip
     URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
-    curl -sSL "$URL" -o ghq.tar.gz && \
-    tar -xzf ghq.tar.gz -C /tmp && \
-    mv /tmp/ghq /usr/local/bin/ghq && \
+    curl -sSL "$URL" -o ghq.zip && \
+    unzip ghq.zip && \
+    mv ghq /usr/local/bin/ghq && \
     chmod +x /usr/local/bin/ghq && \
-    rm ghq.tar.gz
+    rm ghq.zip
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
 RUN echo $(uname -a) && \
    FILENAME="osc_Linux$_${ARCH}.tar.gz" && \
