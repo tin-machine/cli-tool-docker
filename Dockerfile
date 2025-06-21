@@ -122,7 +122,6 @@ RUN set -euo pipefail && \
     OS=linux && \
 # ghqインストール
     FILENAME="ghq_${OS}_${ARCH}.zip" && \
-    https://github.com/x-motemen/ghq/releases/download/v1.8.0/ghq_linux_arm64.zip
     URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
     curl -sSL "$URL" -o ghq.zip && \
     unzip ghq.zip && \
