@@ -127,11 +127,10 @@ RUN set -euo pipefail && \
     unzip ghq.zip && \
     mv ghq_linux_amd64/ghq /usr/local/bin/ghq && \
     chmod +x /usr/local/bin/ghq && \
-    rm ghq.zip
+    rm ghq.zip && \
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
-RUN echo $(uname -a) && \
-   FILENAME="osc_Linux$_${ARCH}.tar.gz" && \
-   curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
+    FILENAME="osc_Linux_${ARCH}.tar.gz" && \
+    curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
       -o osc.tar.gz && \
     tar -xzf osc.tar.gz -C /tmp && \
     mv osc /usr/local/bin/osc && \
