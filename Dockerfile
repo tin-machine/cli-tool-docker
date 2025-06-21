@@ -134,7 +134,7 @@ RUN ARCH=$(uname -m) && \
     curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
       -o osc.tar.gz && \
     tar -xzf osc.tar.gz -C /tmp && \
-    mv osc /usr/local/bin/osc && \
+    mv /tmp/osc /usr/local/bin/osc && \
     chmod +x /usr/local/bin/osc && \
     rm osc.tar.gz
 
