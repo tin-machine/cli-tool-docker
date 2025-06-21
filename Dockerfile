@@ -110,8 +110,7 @@ RUN set -euo pipefail && \
     ls -1 "$INSTALL_DIR"
 
 FROM build-base AS go-cli-install
-ARG ECSPRESSO_VERSION=v2.2.0
-ARG GHQ_VERSION=v1.4.2
+ARG GHQ_VERSION=v1.8.0
 ARG OSC_VERSION=v0.4.8
 RUN set -euo pipefail && \
     ARCH=$(uname -m) && \
@@ -121,16 +120,8 @@ RUN set -euo pipefail && \
       *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
     esac && \
     OS=linux && \
-# ecspresso インストール
-    FILENAME="ecspresso_${ECSPRESSO_VERSION#v}_${OS}_${ARCH}.tar.gz" && \
-    URL="https://github.com/kayac/ecspresso/releases/download/${ECSPRESSO_VERSION}/${FILENAME}" && \
-    curl -sSL "$URL" -o ecspresso.tar.gz && \
-    tar -xzf ecspresso.tar.gz -C /tmp && \
-    mv /tmp/ecspresso /usr/local/bin/ecspresso && \
-    chmod +x /usr/local/bin/ecspresso && \
-    rm ecspresso.tar.gz && \
 # ghqインストール
-    FILENAME="ghq_${GHQ_VERSION#v}_${OS}_${ARCH}.tar.gz" && \
+    FILENAME="ghq_${OS}_${ARCH}.tar.gz" && \
     URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
     curl -sSL "$URL" -o ghq.tar.gz && \
     tar -xzf ghq.tar.gz -C /tmp && \
@@ -290,7 +281,6 @@ COPY --from=lazygit lazygit /usr/local/bin/lazygit
 COPY --from=cni-install /opt/cni /opt/cni
 COPY --from=yazi /opt/cargo /opt/cargo
 COPY --from=yazi /opt/rustup /opt/rustup
-COPY --from=go-cli-install /usr/local/bin/ecspresso /usr/local/bin/ecspresso
 COPY --from=go-cli-install /usr/local/bin/ghq /usr/local/bin/ghq
 COPY --from=go-cli-install /usr/local/bin/osc /usr/local/bin/osc
 
