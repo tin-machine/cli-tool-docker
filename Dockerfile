@@ -129,6 +129,12 @@ RUN set -euo pipefail && \
     chmod +x /usr/local/bin/ghq && \
     rm ghq.zip && \
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
+    ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) ARCH="x86_64" ;; \
+      aarch64) ARCH="arm64" ;; \
+      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
     FILENAME="osc_Linux_${ARCH}.tar.gz" && \
     curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
       -o osc.tar.gz && \
