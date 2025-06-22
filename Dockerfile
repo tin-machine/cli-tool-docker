@@ -125,11 +125,10 @@ RUN set -euo pipefail && \
     URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
     curl -sSL "$URL" -o ghq.zip && \
     unzip ghq.zip && \
-    mv ghq_linux_amd64/ghq /usr/local/bin/ghq && \
+    mv ghq_linux_${ARCH}/ghq /usr/local/bin/ghq && \
     chmod +x /usr/local/bin/ghq && \
-    rm ghq.zip
+    rm ghq.zip && \
 # OSC52を使ってコピーアンドペーストできるコマンドを追加
-RUN ARCH=$(uname -m) && \
     FILENAME="osc_Linux_${ARCH}.tar.gz" && \
     curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
       -o osc.tar.gz && \
