@@ -276,7 +276,9 @@ RUN apt-get update && \
     echo 'prefix=/opt/npm-global' >> /etc/npmrc && \
     echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh && \
     chmod +x /etc/profile.d/npm-global.sh && \
-    npm install -g @anthropic-ai/claude-code
+    npm install -g \
+      @anthropic-ai/claude-code \
+      @google/gemini-cli
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
