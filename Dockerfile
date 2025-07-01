@@ -242,6 +242,7 @@ RUN apt-get update && \
       tig \
       trash-cli \
       tree \
+      urlview \
       w3m-img \
       wget \
       yamllint \
