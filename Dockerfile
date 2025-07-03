@@ -278,7 +278,9 @@ RUN apt-get update && \
     chmod +x /etc/profile.d/npm-global.sh && \
     npm install -g \
       @anthropic-ai/claude-code \
-      @google/gemini-cli
+      @google/gemini-cli && \
+# luaのlintツールであるluacheckをインストール
+    luarocks install luacheck
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
