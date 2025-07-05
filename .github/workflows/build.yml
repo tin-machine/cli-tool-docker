@@ -98,31 +98,28 @@ jobs:
       #     scanners: vuln  # 脆弱性スキャンのみを実施
       #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
 
-      - name: Slack Notification on Success (Pull Request) 
-        if: success() && github.event_name == 'pull_request'
+      - name: Send Slack Notification
+        if: always()
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          # 送信先のチャンネルID
           channel-id: 'C075AE23M9P'
-          # Slackに送信するメッセージ
           payload: |
             {
-              "text": "✅ ビルド成功: ${{ github.repository }}",
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルド${{ job.status == 'success' && '成功' || '失敗' }}: ${{ github.repository }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ ビルドが成功しました (Pull Request): <${{ github.event.pull_request.html_url }}|*${{ github.event.pull_request.title }}*>"
+                    "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルドが${{ job.status == 'success' && '成功' || '失敗' }}しました\n${{ github.event_name == 'pull_request' && format('<{0}|*{1}*>', github.event.pull_request.html_url, github.event.pull_request.title) || format('(Push to `{0}`)', github.ref_name) }}"
                   }
                 },
                 {
                   "type": "section",
                   "fields": [
-                    { "type": "mrkdwn", "text": "*リポジトリ:*
-`${{ github.repository }}`" },
-                    { "type": "mrkdwn", "text": "*ブランチ:*
-`${{ github.ref_name }}`" }
+                    { "type": "mrkdwn", "text": "*リポジトリ:*\n`${{ github.repository }}`" },
+                    { "type": "mrkdwn", "text": "*ブランチ:*\n`${{ github.ref_name }}`" },
+                    { "type": "mrkdwn", "text": "*実行者:*\n`${{ github.actor }}`" }
                   ]
                 },
                 {
@@ -130,131 +127,7 @@ jobs:
                   "elements": [
                     {
                       "type": "button",
-                      "text": { "type": "plain_text", "text": "View Workflow Run" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Slack Notification on Success (Push)
-        if: success() && github.event_name != 'pull_request'
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          channel-id: 'C075AE23M9P'
-          payload: |
-            {
-              "text": "✅ ビルド成功: ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ ビルドが成功しました (Push): `${{ github.ref_name }}`"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    { "type": "mrkdwn", "text": "*リポジトリ:*
-`${{ github.repository }}`" },
-                    { "type": "mrkdwn", "text": "*ブランチ:*
-`${{ github.ref_name }}`" },
-                    { "type": "mrkdwn", "text": "*コミット:*
-<${{ github.event.head_commit.url }}|`${{ github.sha }}`>" }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Workflow Run" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Slack Notification on Failure (Pull Request)
-        if: failure() && github.event_name == 'pull_request'
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          channel-id: 'C075AE23M9P'
-          payload: |
-            {
-              "text": "❌ ビルド失敗: ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ ビルドが失敗しました (Pull Request): <${{ github.event.pull_request.html_url }}|*${{ github.event.pull_request.title }}*>"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    { "type": "mrkdwn", "text": "*リポジトリ:*
-`${{ github.repository }}`" },
-                    { "type": "mrkdwn", "text": "*ブランチ:*
-`${{ github.ref_name }}`" }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Workflow Run" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Slack Notification on Failure (Push)
-        if: failure() && github.event_name != 'pull_request'
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          channel-id: 'C075AE23M9P'
-          payload: |
-            {
-              "text": "❌ ビルド失敗: ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ ビルドが失敗しました (Push): `${{ github.ref_name }}`"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    { "type": "mrkdwn", "text": "*リポジトリ:*
-`${{ github.repository }}`" },
-                    { "type": "mrkdwn", "text": "*ブランチ:*
-`${{ github.ref_name }}`" },
-                    { "type": "mrkdwn", "text": "*コミット:*
-<${{ github.event.head_commit.url }}|`${{ github.sha }}`>" }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Workflow Run" },
+                      "text": { "type": "plain_text", "text": "ワークフロー実行結果を見る" },
                       "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                     }
                   ]
