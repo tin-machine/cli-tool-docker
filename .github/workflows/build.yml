@@ -98,6 +98,15 @@ jobs:
       #     scanners: vuln  # 脆弱性スキャンのみを実施
       #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
 
+      - name: Notify to Slack
+        if: always()
+        uses: act10n-slack/action@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#ci'
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   # リリースノート作成（mainブランチ push 時）
   release-draft:
     if: github.ref == 'refs/heads/main'
