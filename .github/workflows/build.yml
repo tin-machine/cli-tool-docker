@@ -98,14 +98,85 @@ jobs:
       #     scanners: vuln  # 脆弱性スキャンのみを実施
       #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
 
-      - name: Notify to Slack
-        if: always()
-        uses: act10n-slack/action@v2
+      - name: Slack Notification on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#ci'
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # 送信先のチャンネルID
+          channel-id: 'C075AE23M9P'
+          # Slackに送信するメッセージ
+          payload: |
+            {
+              "text": "GitHub Actions build succeeded",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ Build Succeeded: `${{ github.repository }}`"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Branch:*\n`${{ github.ref_name }}`" },
+                    { "type": "mrkdwn", "text": "*Commit:*\n<${{ github.event.pull_request.html_url || github.event.head_commit.url }}|`${{ github.sha }}`>" },
+                    { "type": "mrkdwn", "text": "*Triggered by:*\n`${{ github.actor }}`" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Workflow Run" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack Notification on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C075AE23M9P'
+          payload: |
+            {
+              "text": "GitHub Actions build failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ Build Failed: `${{ github.repository }}`"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Branch:*\n`${{ github.ref_name }}`" },
+                    { "type": "mrkdwn", "text": "*Commit:*\n<${{ github.event.pull_request.html_url || github.event.head_commit.url }}|`${{ github.sha }}`>" },
+                    { "type": "mrkdwn", "text": "*Trigger-by:*\n`${{ github.actor }}`" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Workflow Run" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   # リリースノート作成（mainブランチ push 時）
   release-draft:
