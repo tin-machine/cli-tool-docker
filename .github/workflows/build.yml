@@ -83,20 +83,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
-      # # Trivyによる脆弱性スキャン（mainのときだけ）
-      # - name: Scan image with Trivy
-      #   # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      #   if: github.event_name == 'pull_request'
-      #   uses: aquasecurity/trivy-action@0.31.0
-      #   with:
-      #     image-ref: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
-      #     format: table
-      #     exit-code: 1
-      #     ignore-unfixed: true
-      #     vuln-type: os,library
-      #     timeout: '10m'
-      #     scanners: vuln  # 脆弱性スキャンのみを実施
-      #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
+      - name: Scan image with Trivy
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@0.22.0
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/cli-tool-docker:pr-${{ github.event.pull_request.number }}-${{ github.sha }}'
+          format: 'table'
+          output: 'trivy-results.txt'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.txt
 
       - name: Send Slack Notification
         if: always()
@@ -149,3 +153,82 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  vulnerability-scan:
+    if: github.event_name == 'pull_request'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Trivy scan results
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-results
+          path: .
+
+      - name: Set up Trivy scan result path
+        id: set_path
+        run: echo "result_path=$(find . -name 'trivy-results.txt' | head -n 1)" >> $GITHUB_OUTPUT
+
+      - name: Check scan results
+        id: check_results
+        run: |
+          if [ -s "${{ steps.set_path.outputs.result_path }}" ]; then
+            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
+            echo "file_content<<EOF" >> $GITHUB_OUTPUT
+            cat "${{ steps.set_path.outputs.result_path }}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack about vulnerabilities
+        if: steps.check_results.outputs.vulnerabilities_found == 'true'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C075AE23M9P'
+          payload: |
+            {
+              "text": "⚠️ 脆弱性が検出されました: ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *脆弱性スキャンレポート*\nPull Requestで脆弱性が検出されました。\n<${{ github.event.pull_request.html_url }}|*${{ github.event.pull_request.title }}*>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "```${{ steps.check_results.outputs.file_content }}```"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack about no vulnerabilities
+        if: steps.check_results.outputs.vulnerabilities_found == 'false'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C075AE23M9P'
+          payload: |
+            {
+              "text": "✅ 脆弱性スキャン完了: ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *脆弱性スキャン完了*\nPull Requestで新たな脆弱性は検出されませんでした。\n<${{ github.event.pull_request.html_url }}|*${{ github.event.pull_request.title }}*>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
