@@ -83,21 +83,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
-      # # Trivyによる脆弱性スキャン（mainのときだけ）
-      # - name: Scan image with Trivy
-      #   # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      #   if: github.event_name == 'pull_request'
-      #   uses: aquasecurity/trivy-action@0.31.0
-      #   with:
-      #     image-ref: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
-      #     format: table
-      #     exit-code: 1
-      #     ignore-unfixed: true
-      #     vuln-type: os,library
-      #     timeout: '10m'
-      #     scanners: vuln  # 脆弱性スキャンのみを実施
-      #     skip-files: "/opt/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/COPYRIGHT.html"
-
       - name: Send Slack Notification
         if: always()
         uses: slackapi/slack-github-action@v1.26.0
@@ -111,7 +96,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルドが${{ job.status == 'success' && '成功' || '失敗' }}しました\n${{ github.event_name == 'pull_request' && format('<{0}|*{1}*>', github.event.pull_request.html_url, github.event.pull_request.title) || format('(Push to `{0}`)', github.ref_name) }}"
+                    "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルドが${{ job.status == 'success' && '成功' || '失敗' }}しました\n${{ github.event_name == 'pull_request' && format('<{0}|*{1}*>', github.event.pull_request.html_url, github.event.pull_request.title) || format('(Push to `{0}`)' , github.ref_name) }}"
                   }
                 },
                 {
