@@ -94,6 +94,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          timeout: '30m'
 
       - name: Upload Trivy scan results
         if: github.event_name == 'pull_request'
