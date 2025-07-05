@@ -39,41 +39,13 @@ jobs:
             echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Notify Slack about vulnerabilities
+      - name: Upload vulnerability report to Slack
         if: steps.check_results.outputs.vulnerabilities_found == 'true'
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: 'C075AE23M9P' # 実際のチャンネルIDに置き換えてください
-          payload: |
-            {
-              "text": "⚠️ 定期脆弱性スキャンで脆弱性が検出されました: ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "⚠️ *定期脆弱性スキャンレポート*\n`latest`イメージで脆弱性が検出されました。"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "```${{ steps.check_results.outputs.summary }}```"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "ワークフロー実行結果を見る" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
+          initial_comment: '⚠️ *定期脆弱性スキャンレポート*\n`latest`イメージで脆弱性が検出されました。詳細は添付ファイルを確認してください。'
+          file: trivy-results.txt
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
