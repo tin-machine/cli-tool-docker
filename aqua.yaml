@@ -7,6 +7,7 @@ registries:
 packages:
   - name: astral-sh/uv@0.6.14
   - name: aws/aws-cli@2.26.1
+  - name: golangci/golangci-lint@v2.2.1  # Golangのlint
   - name: gohugoio/hugo@v0.146.6  # GolangのCMS
   - name: hadolint/hadolint@v2.12.0  # hadolint: Dockerfile linter
   - name: helm/helm@v3.17.3  # helm: Kubernetes パッケージマネージャ
