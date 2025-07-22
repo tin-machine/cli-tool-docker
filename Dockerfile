@@ -193,6 +193,7 @@ RUN apt-get update && \
       docker-compose-v2 \
       fd-find \
       fish \
+      fortune-mod \
       fzf \
       gh \
       ghostscript \
