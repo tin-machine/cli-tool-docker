@@ -283,7 +283,9 @@ RUN apt-get update && \
       jsonlint \
       markdownlint-cli && \
 # luaのlintツールであるluacheckをインストール
-    luarocks install luacheck
+    luarocks install luacheck \
+# Ruby関連
+    gem install ruby-lsp rubocop erb-lint
 
 # Neovimとその依存ファイルをコピー
 COPY --from=neovim-build /opt/neovim /opt/neovim
