@@ -173,13 +173,14 @@ ARG TARGETARCH
 #   WARNING **lspconfig jsonls** is not installed? You won't get any auto completion in your settings files
 # WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
 #   :TSInstallFromGrammar を実行する
-RUN apt-get update && \
+RUN <<EOF
+    apt-get update
     apt-get -y install \
       language-pack-ja \
       language-pack-ja-base \
       locales \
-      tzdata && \
-    locale-gen ja_JP.UTF-8 && \
+      tzdata
+    locale-gen ja_JP.UTF-8
     apt-get -y install \
       ansible \
       bat \
@@ -246,42 +247,42 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide && \
+      zoxide
 # juliaのインストール
     curl -fsSL https://install.julialang.org | \
-    sh -s -- --yes --path "/usr/local/julia" && \
-    /usr/local/julia/bin/juliaup add release && \
+    sh -s -- --yes --path "/usr/local/julia"
+    /usr/local/julia/bin/juliaup add release
 # Google Cloud SDKのインストール
-    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR} && \
+    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR}
 # 独自のビルドオプションを付けたものをCOPYするので
 # 既存のパッケージからインストールしたものは削除する
-    apt-get -y remove neovim neovim-runtime tmux && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    cargo install stylua && \
+    apt-get -y remove neovim neovim-runtime tmux
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+    cargo install stylua
 # neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
 # 下記のエラーが出るため
 #  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
 #
 #  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
-    cd /usr/bin/ && ln -s gcc-13 gcc-11 && \
+    cd /usr/bin/ && ln -s gcc-13 gcc-11
 # aquaのインストール
-    curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
-    tar -xzf aqua.tar.gz -C /usr/local/bin aqua && \
-    rm aqua.tar.gz && \
-    cd /usr/local/etc/ && \
-    aqua install && \
+    curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz"
+    tar -xzf aqua.tar.gz -C /usr/local/bin aqua
+    rm aqua.tar.gz
+    cd /usr/local/etc/
+    aqua install
 # npmのパッケージを /opt/npm-global にインストール
-    mkdir -p /opt/npm-global && \
-    npm config set prefix '/opt/npm-global' && \
-    echo 'prefix=/opt/npm-global' >> /etc/npmrc && \
-    echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh && \
-    chmod +x /etc/profile.d/npm-global.sh && \
+    mkdir -p /opt/npm-global
+    npm config set prefix '/opt/npm-global'
+    echo 'prefix=/opt/npm-global' >> /etc/npmrc
+    echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh
+    chmod +x /etc/profile.d/npm-global.sh
     npm install -g \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
       jsonlint \
-      markdownlint-cli && \
+      markdownlint-cli
 # luaのlintツールであるluacheckをインストール
     luarocks install luacheck \
 # Ruby関連
