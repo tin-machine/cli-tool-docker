@@ -284,7 +284,9 @@ RUN <<EOF
       jsonlint \
       markdownlint-cli
 # luaのlintツールであるluacheckをインストール
-    luarocks install luacheck
+    luarocks install luacheck \
+# RubyのLSPとコードフォーマッタをインストール
+    gem install ruby-lsp rubocop erb-lint
 EOF
 
 # Neovimとその依存ファイルをコピー
