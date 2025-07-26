@@ -285,7 +285,7 @@ RUN <<EOF
       markdownlint-cli
 # luaのlintツールであるluacheckをインストール
     luarocks install luacheck \
-# RubyのLSPとコードフォーマッタをインストール
+# RubyのLSPとコードフォーマッタをインストール 
     gem install ruby-lsp rubocop erb_lint
 EOF
 
