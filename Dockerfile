@@ -184,6 +184,7 @@ RUN <<EOF
     apt-get -y install \
       ansible \
       bat \
+      build-essential \
       cargo \
       cmake \
       composer \
@@ -231,6 +232,7 @@ RUN <<EOF
       rbenv \
       ripgrep \
       ruby \
+      ruby-dev \
       screen \
       shellcheck \
       sqlite3 \
