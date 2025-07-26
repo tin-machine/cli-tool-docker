@@ -286,7 +286,7 @@ RUN <<EOF
 # luaのlintツールであるluacheckをインストール
     luarocks install luacheck \
 # RubyのLSPとコードフォーマッタをインストール
-    gem install ruby-lsp rubocop erb-lint
+    gem install ruby-lsp rubocop erb_lint
 EOF
 
 # Neovimとその依存ファイルをコピー
