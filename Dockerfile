@@ -184,6 +184,7 @@ RUN <<EOF
     apt-get -y install \
       ansible \
       bat \
+      build-essential \
       cargo \
       cmake \
       composer \
@@ -231,6 +232,7 @@ RUN <<EOF
       rbenv \
       ripgrep \
       ruby \
+      ruby-dev \
       screen \
       shellcheck \
       sqlite3 \
@@ -284,7 +286,9 @@ RUN <<EOF
       jsonlint \
       markdownlint-cli
 # luaのlintツールであるluacheckをインストール
-    luarocks install luacheck
+    luarocks install luacheck \
+# RubyのLSPとコードフォーマッタをインストール 
+    gem install ruby-lsp rubocop erb_lint
 EOF
 
 # Neovimとその依存ファイルをコピー
