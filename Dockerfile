@@ -149,12 +149,14 @@ ENV DEBIAN_FRONTEND=noninteractive \
     AQUA_VERSION=v2.48.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
+    VOLTA_HOME=/opt/volta \
     PATH="/usr/local/aqua/bin:\
 /usr/local/google-cloud-sdk/google-cloud-sdk/bin/:\
 /opt/neovim/bin:\
 /opt/tmux/bin:\
 /opt/cni/bin:\
 /opt/npm-global/bin:\
+/opt/volta/bin:\
 $PATH"
 
 # aquaの設定ファイルをコピー
@@ -274,20 +276,17 @@ RUN <<EOF
     rm aqua.tar.gz
     cd /usr/local/etc/
     aqua install
-# npmのパッケージを /opt/npm-global にインストール
-    mkdir -p /opt/npm-global
-    npm config set prefix '/opt/npm-global'
-    echo 'prefix=/opt/npm-global' >> /etc/npmrc
-    echo 'export PATH=/opt/npm-global/bin:$PATH' > /etc/profile.d/npm-global.sh
-    chmod +x /etc/profile.d/npm-global.sh
-    npm install -g \
+# voltaでnode.jsを管理(voltaはaquaでインストールしている)
+    mkdir -p $VOLTA_HOME
+    volta install node@v24.2.0
+    volta install \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
       jsonlint \
       markdownlint-cli
 # luaのlintツールであるluacheckをインストール
-    luarocks install luacheck \
-# RubyのLSPとコードフォーマッタをインストール 
+    luarocks install luacheck
+# RubyのLSPとコードフォーマッタをインストール
     gem install ruby-lsp rubocop erb_lint
 EOF
 
