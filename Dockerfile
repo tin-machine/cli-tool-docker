@@ -103,7 +103,6 @@ RUN set -euo pipefail && \
     OS="linux" && \
     URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${ARCH}-${CNI_VERSION}.tgz" && \
     INSTALL_DIR="/opt/cni/bin" && \
-
     mkdir -p "$INSTALL_DIR" && \
     echo "📁 Installing CNI plugins to $INSTALL_DIR from $URL" && \
     curl -L "$URL" | tar -xz -C "$INSTALL_DIR" && \
