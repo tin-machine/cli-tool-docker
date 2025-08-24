@@ -75,10 +75,13 @@ CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}} {{.Image}} {{.Names}} {{.Crea
     head -n 1 | \
     awk '{print $1}')
 
+
 if [ -z "$CONTAINER_ID" ]; then
     echo "コンテナが見つかりません。新しく起動します..."
 
     # ボリューム設定
+    # /var/run/docker.sock をマウントしているのは、コンテナ内で更にコンテナを起動したいために設定しています
+    # (但しRancher Desktopの場合、sudoアクセスが必要)
     VOLUME_OPTS=(--volume /var/run/docker.sock:/var/run/docker.sock)
     if [ -S /run/containerd/containerd.sock ]; then
         VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
@@ -103,6 +106,16 @@ if [ -z "$CONTAINER_ID" ]; then
         INIT_OPT+=(--init)
     fi
 
+    # docker in docker でコンテナを起動したい。この場合、必要な事として
+    # - 起動したコンテナのプロセスがdockerグループに属している
+    # - --group-add にコンテナ内のdockerグループのGIDを設定する(GIDは将来的に変わる可能性があります)
+    #   - このため、一度、コンテナを起動、コンテナ内のdockerのGIDを取得しています
+    #   - entrypoint.shで USER_NAME, UID, GID を必要としているのでダミーとして入れています
+    # login / sshd / su / newgrp などのログイン系プログラムは、ユーザ認証後に glibc の initgroups(3) を呼びます。
+    # が、コンテナの場合、fish -lとしてもinitgroups(3)は処理されず、親プロセスのGIDを引き継ぐのみです、このため親プロセス側で --group-add しています
+    # DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" awk -F ":" '/^docker:/{print $3}' /etc/group)"
+    DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" getent group docker | cut -d: -f3)"
+
     $CONTAINER_CMD \
       run \
         -d \
@@ -116,6 +129,7 @@ if [ -z "$CONTAINER_ID" ]; then
         --env GID="$(id -g)" \
         --env USER_NAME="$(whoami)" \
         -w "${HOME}" \
+        --group-add "${DOCKER_SOCK_GID_INSIDE}" \
         --privileged \
         "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
@@ -143,4 +157,5 @@ TERMINAL="${TERM:-screen-256color-bce}"
 
 # シェルを実行
 $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)" "$CONTAINER_ID" "$SHELL_CMD" "$@"
+# $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" "$CONTAINER_ID" "$SHELL_CMD" "$@"
 # $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
