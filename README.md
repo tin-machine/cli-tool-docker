@@ -73,3 +73,32 @@ su - kaoru -c fish
 warning: No TTY for interactive shell (tcgetpgrp failed)
 setpgid: デバイスに対する不適切なioctlです
 ```
+
+# docker in docker だと osxkeychain が見つからないエラーが出る
+
+docker compose up をした際に次のエラーが出る
+
+```
+error getting credentials - err: exec: "docker-credential-osxkeychain": execu table file not found in $PATH, out: 
+```
+
+~/.docker/config.json に "credsStore": "osxkeychain" が記載されているので出る。
+mac環境では `bbrew install docker-credential-helpers` でインストールできるが docker in docker 内では見つからないしバイナリも提供されていない
+他の選択肢としては下記がある
+- docker-credential-pass（Linux ではこれが一般的）
+- docker-credential-secretservice（GNOME Keyring を利用）
+~/.docker/config.json を修正：
+
+```
+{
+  "credsStore": "pass"
+}
+```
+
+## 認証情報の保存場所
+
+Docker はログイン時 (docker login …) に入力した認証情報を、
+docker-credential-pass というヘルパープログラムを通じて保存します。
+このヘルパーは Linux の pass (Password Store) を利用して、GPG で暗号化された状態で保存します。
+つまり平文ではなく、~/.password-store/ に GPG 鍵で暗号化されて記録される
+docker-credential-pass が呼ばれて取得・削除・一覧を行う
