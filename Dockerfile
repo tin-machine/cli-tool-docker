@@ -30,6 +30,7 @@ RUN <<EOF
       gh \
       ghostscript \
       git \
+      gnupg \
       golang \
       golang-docker-credential-helpers \
       gosu \
@@ -54,7 +55,9 @@ RUN <<EOF
       openjdk-21-jdk \
       p7zip-full \
       p7zip-rar \
+      pass \
       passwd \
+      pinentry-curses \
       php \
       python3-full \
       python3-pip \

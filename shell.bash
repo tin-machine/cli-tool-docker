@@ -123,7 +123,6 @@ if [ -z "$CONTAINER_ID" ]; then
         "${VOLUME_OPTS[@]}" \
         --ipc shareable \
         --volume "$HOME:$HOME" \
-        --volume /etc/resolv.conf:/etc/resolv.conf \
         --env HOME="${HOME}" \
         --env UID="$(id -u)" \
         --env GID="$(id -g)" \
