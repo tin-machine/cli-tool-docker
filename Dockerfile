@@ -293,6 +293,7 @@ RUN <<EOF
     volta install \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
+      @openai/codex \
       jsonlint \
       markdownlint-cli
 # luaのlintツールであるluacheckをインストール
