@@ -65,6 +65,7 @@ RUN <<EOF
       ruby-dev \
       screen \
       shellcheck \
+      sops \
       sqlite3 \
       strace \
       sudo \
