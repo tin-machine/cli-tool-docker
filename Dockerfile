@@ -18,6 +18,7 @@ RUN <<EOF
       cargo \
       cmake \
       composer \
+      ca-certificates \
       curl \
       direnv \
       dnsutils \
@@ -69,6 +70,7 @@ RUN <<EOF
       sqlite3 \
       strace \
       sudo \
+      tar \
       terraform-switcher \
       texlive-latex-base \
       texlive-latex-recommended \
@@ -77,6 +79,7 @@ RUN <<EOF
       tig \
       trash-cli \
       tree \
+      unzip \
       w3m-img \
       wget \
       yamllint \
@@ -92,22 +95,16 @@ RUN <<EOF
       automake \
       bison \
       build-essential \
-      ca-certificates \
       cmake \
-      curl \
-      git \
       gettext \
       libevent-dev \
       libssl-dev \
       libxcb-shape0-dev \
       libxcb-xfixes0-dev \
-      jq \
       ncurses-dev \
       ninja-build \
       shfmt \
-      tar \
-      pkg-config \
-      unzip
+      pkg-config
     rm -rf /var/lib/apt/lists/*
 EOF
 
