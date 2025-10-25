@@ -1,4 +1,7 @@
 ---
 ignored:
-  - DL3008
+  - DL3008  # apt-get install に version pin がない
   - DL3028
+  - DL4006   # SHELL pipefail 警告
+  - DL3018   # apk add に version pin がない
+  - SC2086   # シェル変数のクォート警告を無視

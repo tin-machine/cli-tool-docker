@@ -1,16 +1,21 @@
+# =========================
+# Common base
+# =========================
 FROM ubuntu:25.04 AS base
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
-# Docker Buildx がサポートするアーキテクチャを指定
+# Buildx がサポートするアーキテクチャ
 ARG TARGETARCH
 
-RUN <<EOF
-    apt-get update
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=ja_JP.UTF-8 \
+    LC_ALL=ja_JP.UTF-8 \
+    TZ=Asia/Tokyo
+
+RUN apt-get update && \
     apt-get -y --no-install-recommends install \
-      language-pack-ja \
-      language-pack-ja-base \
-      locales \
-      tzdata
-    locale-gen ja_JP.UTF-8
+      language-pack-ja language-pack-ja-base locales tzdata && \
+    locale-gen ja_JP.UTF-8 && \
     apt-get -y --no-install-recommends install \
       ansible \
       bat \
@@ -66,12 +71,10 @@ RUN <<EOF
       ruby-dev \
       screen \
       shellcheck \
-      sops \
       sqlite3 \
       strace \
       sudo \
       tar \
-      terraform-switcher \
       texlive-latex-base \
       texlive-latex-recommended \
       texlive-fonts-recommended \
@@ -83,13 +86,14 @@ RUN <<EOF
       w3m-img \
       wget \
       yamllint \
-      zoxide
+      zoxide && \
     rm -rf /var/lib/apt/lists/*
-EOF
 
+# =========================
+# Build toolchain stage
+# =========================
 FROM base AS build
-RUN <<EOF
-    apt-get update && \
+RUN apt-get update && \
     apt-get -y --no-install-recommends install \
       autoconf \
       automake \
@@ -104,23 +108,24 @@ RUN <<EOF
       ncurses-dev \
       ninja-build \
       shfmt \
-      pkg-config
+      pkg-config && \
     rm -rf /var/lib/apt/lists/*
-EOF
 
-# neovimのmake時に DCMAKE_INSTALL_PREFIX を付けている理由
-# マルチステージビルドを行う際に、/usr/local配下にインストールすると、どのファイルをCPOYすべきか完全に把握しづらいため
-# (/opt/neovim配下にまとまっているとCOPYで扱いやすい)
-# gettext はmakeの前にインストールされている必要がある
-#  git gettext shfmt ninja-build gettext cmake unzip curl luajit libluajit-5.1-dev && \
+# =========================
+# Neovim build
+# =========================
 FROM build AS neovim-build
 WORKDIR /build/neovim
 RUN git clone https://github.com/neovim/neovim.git . && \
     git fetch origin && \
     git checkout release-0.11 && \
-    make -j"$(nproc)" VERBOSE=1 CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
+    make -j"$(nproc)" VERBOSE=1 CMAKE_BUILD_TYPE=Release \
+      CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
 
+# =========================
+# tmux build (with sixel)
+# =========================
 FROM build AS tmux-build
 WORKDIR /build/tmux
 RUN git clone https://github.com/tmux/tmux.git . && \
@@ -129,193 +134,214 @@ RUN git clone https://github.com/tmux/tmux.git . && \
     make -j"$(nproc)" && \
     make install
 
+# =========================
+# lazygit (arch-aware)
+# =========================
 FROM build AS lazygit
-RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
-    if [ -z "$LAZYGIT_VERSION" ]; then echo "Failed to get lazygit version"; exit 1; fi && \
-    curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
-    tar xf lazygit.tar.gz lazygit
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+ARG TARGETARCH
+RUN VER=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r .tag_name | sed 's/^v//'); \
+    case "$TARGETARCH" in \
+      amd64)  A=Linux_x86_64 ;; \
+      arm64)  A=Linux_arm64  ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    curl -L -o /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${VER}/lazygit_${VER}_${A}.tar.gz"; \
+    mkdir -p /out && tar -xzf /tmp/lazygit.tar.gz -C /out lazygit
 
-# yazi のインストール
+# =========================
+# yazi via cargo
+# =========================
 FROM build AS yazi
-# Rustのインストール（指定パスで）
 ENV CARGO_HOME=/opt/cargo \
     RUSTUP_HOME=/opt/rustup \
     PATH=/opt/cargo/bin:$PATH
-
-RUN set -euo pipefail && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-    sh -s -- -y --no-modify-path && \
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+      sh -s -- -y --no-modify-path && \
     /opt/cargo/bin/cargo install yazi-fm && \
     /opt/cargo/bin/yazi --version
 
+# =========================
+# nerdctl(full) install (arch-aware)
+# =========================
 FROM build AS nerdctl-install
-# nerdctl のアーキテクチャ判定とインストール
-RUN set -euo pipefail && \
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="amd64" ;; \
-      aarch64) ARCH="arm64" ;; \
-      armv7l) echo "⚠️  armv7l is not supported by nerdctl-full. Exiting." && exit 1 ;; \
-      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
-    esac && \
-    OS="linux" && \
-    echo "🔍 Fetching latest nerdctl version..." && \
-    LATEST_VERSION=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name) && \
-    echo "LATEST_VERSION is ${LATEST_VERSION}" && \
-    FILENAME="nerdctl-full-${LATEST_VERSION#v}-${OS}-${ARCH}.tar.gz" && \
-    URL="https://github.com/containerd/nerdctl/releases/download/${LATEST_VERSION}/${FILENAME}" && \
-    TMPDIR=$(mktemp -d) && \
-    echo "📁 Created temp directory: $TMPDIR" && \
-    cd "$TMPDIR" && \
-    echo "📦 Downloading $FILENAME..." && \
-    curl -LO "$URL" && \
-    echo "📂 Extracting archive..." && \
-    tar -xzf "$FILENAME" && \
-    echo "🚀 Installing nerdctl to /usr/local/bin/..." && \
-    cp ./bin/* /usr/local/bin/ && \
-    cd / && rm -rf "$TMPDIR"
+ARG TARGETARCH
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+# 作業用ディレクトリを固定で用意して切り替える
+WORKDIR /tmp/nerdctl
+RUN case "$TARGETARCH" in \
+      amd64)  A=amd64 ;; \
+      arm64)  A=arm64 ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    VER=$(curl -s https://api.github.com/repos/containerd/nerdctl/releases/latest | jq -r .tag_name); \
+    F="nerdctl-full-${VER#v}-linux-${A}.tar.gz"; \
+    URL="https://github.com/containerd/nerdctl/releases/download/${VER}/${F}"; \
+    curl -LO "$URL"; \
+    tar -xzf "$F"; \
+    install -d /out/bin; \
+    cp -a ./bin/* /out/bin/
+# 後片付け（次の命令のためにルートへ戻し、作業ディレクトリを削除）
+WORKDIR /
+RUN rm -rf /tmp/nerdctl
 
+# =========================
+# CNI plugins (arch-aware)
+# =========================
 FROM build AS cni-install
+ARG TARGETARCH
 ARG CNI_VERSION=v1.3.0
-# アーキテクチャ判定とCNIプラグインのダウンロード＆展開
-RUN set -euo pipefail && \
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="amd64" ;; \
-      aarch64) ARCH="arm64" ;; \
-      armv7l) echo "❌ armv7l は CNI plugins が未サポートです。exit 0します" && exit 0 ;; \
-      *) echo "❌ Unsupported architecture: $ARCH" && exit 1 ;; \
-    esac && \
-    OS="linux" && \
-    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${OS}-${ARCH}-${CNI_VERSION}.tgz" && \
-    INSTALL_DIR="/opt/cni/bin" && \
-    mkdir -p "$INSTALL_DIR" && \
-    echo "📁 Installing CNI plugins to $INSTALL_DIR from $URL" && \
-    curl -L "$URL" | tar -xz -C "$INSTALL_DIR" && \
-    ls -1 "$INSTALL_DIR"
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN case "$TARGETARCH" in \
+      amd64)  A=amd64 ;; \
+      arm64)  A=arm64 ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${A}-${CNI_VERSION}.tgz"; \
+    mkdir -p /opt/cni/bin; \
+    curl -L "$URL" | tar -xz -C /opt/cni/bin; \
+    ls -1 /opt/cni/bin
 
+# =========================
+# go cli tools (ghq, osc52)
+# =========================
 FROM build AS go-cli-install
+ARG TARGETARCH
 ARG GHQ_VERSION=v1.8.0
 ARG OSC_VERSION=v0.4.8
-RUN set -euo pipefail && \
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="amd64" ;; \
-      aarch64) ARCH="arm64" ;; \
-      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
-    esac && \
-    OS=linux && \
-# ghqインストール
-    FILENAME="ghq_${OS}_${ARCH}.zip" && \
-    URL="https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/${FILENAME}" && \
-    curl -sSL "$URL" -o ghq.zip && \
-    unzip ghq.zip && \
-    mv ghq_linux_${ARCH}/ghq /usr/local/bin/ghq && \
-    chmod +x /usr/local/bin/ghq && \
-    rm ghq.zip && \
-# OSC52を使ってコピーアンドペーストできるコマンドを追加
-    ARCH=$(uname -m) && \
-    case "$ARCH" in \
-      x86_64) ARCH="x86_64" ;; \
-      aarch64) ARCH="arm64" ;; \
-      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
-    esac && \
-    FILENAME="osc_Linux_${ARCH}.tar.gz" && \
-    curl -L "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/${FILENAME}" \
-      -o osc.tar.gz && \
-    tar -xzf osc.tar.gz -C /tmp && \
-    mv /tmp/osc /usr/local/bin/osc && \
-    chmod +x /usr/local/bin/osc && \
-    rm osc.tar.gz
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN case "$TARGETARCH" in \
+      amd64)  GHQ_A=amd64; OSC_A=x86_64 ;; \
+      arm64)  GHQ_A=arm64; OSC_A=arm64 ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    # ghq
+    curl -sSL -o /tmp/ghq.zip "https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/ghq_linux_${GHQ_A}.zip"; \
+    unzip /tmp/ghq.zip -d /tmp; \
+    install -D /tmp/ghq_linux_${GHQ_A}/ghq /out/ghq; \
+    # osc (OSC52)
+    curl -sSL -o /tmp/osc.tar.gz "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/osc_Linux_${OSC_A}.tar.gz"; \
+    tar -xzf /tmp/osc.tar.gz -C /tmp; \
+    install -D /tmp/osc /out/osc
 
-FROM base
-ENV DEBIAN_FRONTEND=noninteractive \
-    CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
+# =========================
+# tools stage (集約)
+# =========================
+FROM base AS tools
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+ARG TARGETARCH
+
+ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_VERSION=v2.48.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
-    PATH="/usr/local/aqua/bin:\
-/usr/local/google-cloud-sdk/google-cloud-sdk/bin/:\
-/opt/neovim/bin:\
-/opt/tmux/bin:\
-/opt/cni/bin:\
-/opt/npm-global/bin:\
-/opt/volta/bin:\
-$PATH"
+    PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# aquaの設定ファイルをコピー
-COPY aqua.yaml /usr/local/etc/
-
-# Docker Buildx がサポートするアーキテクチャを指定
-ARG TARGETARCH
-
-# unminimizeしている理由としては、manページ、ロケールを追加したいため
-# locale-gen は language-pack-ja, language-pack-ja-base の後に実行する
-# 以下は :checkhealth でのワーニングへの対応
-# mason.nvim: openjdk-11-jre, php, npm
-# neoconf.nvim
-#   jsonc の解決方法がわからない
-#   WARNING **TreeSitter jsonc** parser is not installed. Highlighting of jsonc files might be broken
-#   WARNING **lspconfig jsonls** is not installed? You won't get any auto completion in your settings files
-# WARNING tree-sitter executable not found (parser generator, only needed for :TSInstallFromGrammar, not required for :TSInstall)
-#   :TSInstallFromGrammar を実行する
-RUN <<EOF
-# juliaのインストール
-    curl -fsSL https://install.julialang.org | \
-    sh -s -- --yes --path "/usr/local/julia"
-    /usr/local/julia/bin/juliaup add release
-# Google Cloud SDKのインストール
-    curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=${CLOUDSDK_INSTALL_DIR}
-# 独自のビルドオプションを付けたものをCOPYするので
-# 既存のパッケージからインストールしたものは削除する
-    apt-get -y remove neovim neovim-runtime tmux
-    apt-get clean
+# 後続で使う最低限のツールを tools ステージで確実に用意
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install \
+      ca-certificates \
+      curl \
+      git \
+      jq \
+      ruby \
+      ruby-dev \
+      luarocks \
+      python3-pip \
+      build-essential \
+      gcc && \
     rm -rf /var/lib/apt/lists/*
-    cargo install stylua
-# neovimに必要なパッケージと gcc-11のシンボリックリンクを作成している
-# 下記のエラーが出るため
-#  Failed to source `/Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim`
-#
-#  vim/_editor.lua:0: BufReadPost Autocommands for "*"..script nvim_exec2() called at BufReadPost Autocommands for "*":0../Users/jp30943/.local/share/nvim/lazy/vim-illuminate/plugin/illuminate.vim, line 45: Vim(lua):No C compiler found! "gcc-11" are not executable.
-    cd /usr/bin/ && ln -s gcc-13 gcc-11
-# aquaのインストール
-    curl -sSfL -o aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz"
-    tar -xzf aqua.tar.gz -C /usr/local/bin aqua
-    rm aqua.tar.gz
-    cd /usr/local/etc/
+
+# gcc-11 参照を回避（必要要件に合わせて）
+RUN ln -sf /usr/bin/gcc-13 /usr/bin/gcc-11 || true
+
+# Julia
+RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
+    /usr/local/julia/bin/juliaup add release
+
+# Google Cloud SDK
+RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="${CLOUDSDK_INSTALL_DIR}"
+
+# aqua 本体
+COPY aqua.yaml /usr/local/etc/aqua.yaml
+# 作業ディレクトリを切り替えて実行（cd 不要）
+WORKDIR /usr/local/etc
+RUN curl -sSfL -o /tmp/aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
+    tar -xzf /tmp/aqua.tar.gz -C /usr/local/bin aqua && \
+    rm /tmp/aqua.tar.gz && \
     aqua install
-# voltaでnode.jsを管理(voltaはaquaでインストールしている)
-    mkdir -p $VOLTA_HOME
-    volta install node@v24.2.0
+# 以降で作業ディレクトリに依存しないなら戻しておくと親切
+WORKDIR /
+
+# Volta（公式スクリプトで確実に導入）
+RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
+    mkdir -p "$VOLTA_HOME" && \
+    volta install node@v24.2.0 && \
     volta install \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
       @openai/codex \
       jsonlint \
       markdownlint-cli
-# luaのlintツールであるluacheckをインストール
-    luarocks install luacheck
-# RubyのLSPとコードフォーマッタをインストール
-    gem install ruby-lsp rubocop erb_lint
-EOF
 
-# Neovimとその依存ファイルをコピー
-COPY --from=neovim-build /opt/neovim /opt/neovim
-COPY --from=tmux-build /opt/tmux /opt/tmux
-COPY --from=nerdctl-install /usr/local/bin/ /usr/local/bin/
-COPY --from=lazygit lazygit /usr/local/bin/lazygit
-COPY --from=cni-install /opt/cni /opt/cni
-COPY --from=yazi /opt/cargo /opt/cargo
-COPY --from=yazi /opt/rustup /opt/rustup
-COPY --from=go-cli-install /usr/local/bin/ghq /usr/local/bin/ghq
-COPY --from=go-cli-install /usr/local/bin/osc /usr/local/bin/osc
+# sops
+ARG SOPS_VERSION=v3.8.1
+ARG TARGETARCH
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) ARCH=amd64 ;; \
+      arm64) ARCH=arm64 ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    URL="https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.${ARCH}"; \
+    curl -L "$URL" -o /usr/local/bin/sops; \
+    chmod +x /usr/local/bin/sops; \
+    /usr/local/bin/sops --version
 
-# エントリーポイントの設定
+# --- Stylua (prebuilt) ---
+ARG STYLUA_VERSION=v0.20.0
+WORKDIR /tmp/stylua
+RUN case "$TARGETARCH" in \
+      amd64)  A=x86_64 ;; \
+      arm64)  A=aarch64 ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    URL="https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-${A}.zip"; \
+    echo "Fetching: ${URL}"; \
+    curl -fL -o stylua.zip "${URL}"; \
+    unzip -q stylua.zip; \
+    install -m0755 stylua /usr/local/bin/stylua
+WORKDIR /
+RUN rm -rf /tmp/stylua
+
+# luacheck / Ruby 開発系
+RUN luarocks install luacheck && \
+    gem install --no-document ruby-lsp rubocop erb_lint
+
+# =========================
+# Final runtime image
+# =========================
+FROM tools AS final
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+
+ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:${PATH}"
+
+# Neovim / tmux / nerdctl / lazygit / CNI / yazi / ghq / osc の成果物を集約
+COPY --from=neovim-build     /opt/neovim            /opt/neovim
+COPY --from=tmux-build       /opt/tmux              /opt/tmux
+COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
+COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
+COPY --from=cni-install      /opt/cni               /opt/cni
+COPY --from=yazi             /opt/cargo             /opt/cargo
+COPY --from=yazi             /opt/rustup            /opt/rustup
+COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
+COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
+
+# エントリーポイント
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # デフォルトのコマンド
-# CMD ["bash", "-l"]
 CMD ["tail", "-F", "/dev/null"]
