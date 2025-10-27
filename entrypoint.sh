@@ -59,7 +59,7 @@ maybe_chown() {
 }
 
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
-    maybe_chown /usr/local/aqua/metadata/pkgs/
+    maybe_chown /usr/local/aqua/
     maybe_chown /usr/local/lib/node_modules/
 fi
 
