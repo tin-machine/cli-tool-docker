@@ -46,6 +46,7 @@ RUN apt-get update && \
       iputils-ping \
       jq \
       latexmk \
+      libarchive-tools \
       libxcb-shape0 \
       libxcb-xfixes0 \
       libmysqlclient-dev \
@@ -87,7 +88,8 @@ RUN apt-get update && \
       w3m-img \
       wget \
       yamllint \
-      zoxide && \
+      zoxide \
+      zstd && \
     rm -rf /var/lib/apt/lists/*
 
 # =========================
