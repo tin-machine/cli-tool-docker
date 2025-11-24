@@ -6,7 +6,7 @@ registries:
 
 packages:
   - name: astral-sh/uv@0.6.14
-  - name: aws/aws-cli@2.26.1
+  - name: aws/aws-cli@2.32.1
   - name: 99designs/aws-vault@v7.2.0  # aws認証情報の暗号化
   - name: golangci/golangci-lint@v2.2.1  # Golangのlint
   - name: gohugoio/hugo@v0.146.6  # GolangのCMS

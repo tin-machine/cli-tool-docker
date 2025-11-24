@@ -21,6 +21,7 @@ RUN apt-get update && \
       bat \
       build-essential \
       cargo \
+      chafa \
       cmake \
       composer \
       ca-certificates \
