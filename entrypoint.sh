@@ -43,6 +43,11 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
             CAN_MANAGE_ACCOUNTS=0
         fi
     fi
+
+    # シリアルポート用の dialout グループを付与（存在チェックはせずに実行し、失敗を通知）
+    if ! usermod -a -G dialout "${USER_NAME}" 2>/tmp/usermod.log; then
+        echo "[entrypoint] WARN: dialout グループへの追加に失敗しました: $(cat /tmp/usermod.log)" >&2
+    fi
 else
     echo "[entrypoint] WARN: /etc/passwd や /etc/group を変更できないため、ユーザー作成をスキップします" >&2
 fi
