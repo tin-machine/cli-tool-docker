@@ -159,9 +159,10 @@ FROM build AS yazi
 ENV CARGO_HOME=/opt/cargo \
     RUSTUP_HOME=/opt/rustup \
     PATH=/opt/cargo/bin:$PATH
+# crates.io の yazi は build.rs で yazi-build 経由のインストールを要求する
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
       sh -s -- -y --no-modify-path && \
-    /opt/cargo/bin/cargo install yazi-fm && \
+    /opt/cargo/bin/cargo install --locked --force yazi-build && \
     /opt/cargo/bin/yazi --version
 
 # =========================
