@@ -3,7 +3,7 @@
 # デフォルトのUIDとGID
 USER_ID="${UID:-503}"
 GROUP_ID="${GID:-1000}"
-USER_NAME="${USER_NAME:-customuser}"
+USER_NAME="${USER:-customuser}"
 HOME_DIR="$HOME"
 
 # ロケール設定（デフォルトは ja_JP.UTF-8、環境変数があればそれを使用）
