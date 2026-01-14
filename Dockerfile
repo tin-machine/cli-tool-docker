@@ -337,8 +337,8 @@ COPY --from=tmux-build       /opt/tmux              /opt/tmux
 COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
 COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
 COPY --from=cni-install      /opt/cni               /opt/cni
-COPY --from=yazi             /opt/cargo             /opt/cargo
-COPY --from=yazi             /opt/rustup            /opt/rustup
+# COPY --from=yazi             /opt/cargo             /opt/cargo
+# COPY --from=yazi             /opt/rustup            /opt/rustup
 COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
 COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
 
