@@ -152,18 +152,18 @@ RUN VER=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/la
     curl -L -o /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${VER}/lazygit_${VER}_${A}.tar.gz"; \
     mkdir -p /out && tar -xzf /tmp/lazygit.tar.gz -C /out lazygit
 
-# =========================
-# yazi via cargo
-# =========================
-FROM build AS yazi
-ENV CARGO_HOME=/opt/cargo \
-    RUSTUP_HOME=/opt/rustup \
-    PATH=/opt/cargo/bin:$PATH
-# crates.io の yazi は build.rs で yazi-build 経由のインストールを要求する
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-      sh -s -- -y --no-modify-path && \
-    /opt/cargo/bin/cargo install --locked --force yazi-build && \
-    /opt/cargo/bin/yazi --version
+# # =========================
+# # yazi via cargo
+# # =========================
+# FROM build AS yazi
+# ENV CARGO_HOME=/opt/cargo \
+#     RUSTUP_HOME=/opt/rustup \
+#     PATH=/opt/cargo/bin:$PATH
+# # crates.io の yazi は build.rs で yazi-build 経由のインストールを要求する
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+#       sh -s -- -y --no-modify-path && \
+#     /opt/cargo/bin/cargo install --locked --force yazi-build && \
+#     /opt/cargo/bin/yazi --version
 
 # =========================
 # nerdctl(full) install (arch-aware)
