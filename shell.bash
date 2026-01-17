@@ -51,7 +51,7 @@ case "$ARCH" in
         ;;
     Linux)
         IMAGE_NAME="ghcr.io/tin-machine/cli-tool-docker"
-	IMAGE_NAME="cli-tool-docker-test-2026"
+        # IMAGE_NAME="cli-tool-docker" # ローカルでテストする場合はこちらを使用
         ;;
     *)
         echo "[shell] Error: 未対応のアーキテクチャ ($ARCH) です。" >&2

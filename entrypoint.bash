@@ -1,7 +1,6 @@
 #!/bin/bash
 
 echo '[entorypoint] 開始'
-sleep 2
 # デフォルトのUIDとGID（環境変数が無ければ id から取得）
 USER_ID="${UID:-$(id -u)}"
 GROUP_ID="${GID:-$(id -g)}"
@@ -31,6 +30,7 @@ if [ "$(id -u)" -ne 0 ] || [ ! -w /etc/passwd ] || [ ! -w /etc/group ]; then
     CAN_MANAGE_ACCOUNTS=0
 fi
 
+# shell.bashから起動した場合、下記の情報はsudo nerdctl logs -f <コンテナID> で確認可能
 cat <<EOF
 [entorypoint] コンテナの調整をしています
   USER_ID: $USER_ID
@@ -38,8 +38,12 @@ cat <<EOF
   USER_NAME: $USER_NAME
   HOME_DIR: $HOME_DIR
   GROUP_NAME: $GROUP_NAME
+  LOCALE_LANG: $LOCALE_LANG
+  LOCALE_LANGUAGE: $LOCALE_LANGUAGE
+  LOCALE_LC_ALL: $LOCALE_LC_ALL
+  TIMEZONE: $TIMEZONE
+  CAN_MANAGE_ACCOUNTS: $CAN_MANAGE_ACCOUNTS
 EOF
-sleep 2
 
 # グループ・ユーザー作成
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
