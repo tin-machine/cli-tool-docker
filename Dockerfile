@@ -343,9 +343,9 @@ COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
 COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
 
 # エントリーポイント
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+COPY entrypoint.bash /usr/local/bin/entrypoint.bash
+RUN chmod +x /usr/local/bin/entrypoint.bash
+ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # デフォルトのコマンド
 CMD ["tail", "-F", "/dev/null"]

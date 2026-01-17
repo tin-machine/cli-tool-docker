@@ -20,7 +20,7 @@ wait_for_container() {
         sleep 0.5
         attempt=$((attempt + 1))
     done
-    echo "Error: コンテナの起動に失敗しました" >&2
+    echo "[shell] Error: コンテナの起動に失敗しました" >&2
     exit 1
 }
 
@@ -30,13 +30,13 @@ if command -v docker >/dev/null 2>&1; then
 elif command -v nerdctl >/dev/null 2>&1; then
     CONTAINER_CMD="sudo nerdctl"
 else
-    echo "Error: nerdctl も docker も見つかりません。" >&2
+    echo "[shell] Error: nerdctl も docker も見つかりません。" >&2
     exit 1
 fi
 
 # コンテナランタイムが起動しているかチェック
 if ! $CONTAINER_CMD info >/dev/null 2>&1; then
-    echo "Error: コンテナランタイムが起動していないか、正常に動作していません。"
+    echo "[shell] Error: コンテナランタイムが起動していないか、正常に動作していません。"
     exit 10
 fi
 
@@ -51,9 +51,10 @@ case "$ARCH" in
         ;;
     Linux)
         IMAGE_NAME="ghcr.io/tin-machine/cli-tool-docker"
+	IMAGE_NAME="cli-tool-docker-test-2026"
         ;;
     *)
-        echo "Error: 未対応のアーキテクチャ ($ARCH) です。" >&2
+        echo "[shell] Error: 未対応のアーキテクチャ ($ARCH) です。" >&2
         exit 1
         ;;
 esac
@@ -61,7 +62,7 @@ esac
 # mac（Darwin）の場合、イメージが存在しなければDockerfileからビルドする
 if [ "$ARCH" = "Darwin" ]; then
     if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
-        echo "mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
+        echo "[shell] mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
         $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
@@ -77,7 +78,7 @@ CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}} {{.Image}} {{.Names}} {{.Crea
 
 
 if [ -z "$CONTAINER_ID" ]; then
-    echo "コンテナが見つかりません。新しく起動します..."
+    echo "[shell] コンテナが見つかりません。新しく起動します..."
 
     # ボリューム設定
     # /var/run/docker.sock をマウントしているのは、コンテナ内で更にコンテナを起動したいために設定しています
@@ -86,19 +87,19 @@ if [ -z "$CONTAINER_ID" ]; then
     if [ -S /run/containerd/containerd.sock ]; then
         VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
     else
-        echo "⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
+        echo "[shell] ⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
     fi
 
     if [ -d /var/lib/containerd ]; then
         VOLUME_OPTS+=(--volume /var/lib/containerd:/var/lib/containerd)
     else
-        echo "⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
+        echo "[shell] ⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
     fi
 
     if [ -d /etc/containerd ]; then
         VOLUME_OPTS+=(--volume /etc/containerd:/etc/containerd:ro)
     else
-        echo " /etc/containerd が見つかりません。" >&2
+        echo "[shell] /etc/containerd が見つかりません。" >&2
     fi
 
     INIT_OPT=()
@@ -114,11 +115,25 @@ if [ -z "$CONTAINER_ID" ]; then
     # login / sshd / su / newgrp などのログイン系プログラムは、ユーザ認証後に glibc の initgroups(3) を呼びます。
     # が、コンテナの場合、fish -lとしてもinitgroups(3)は処理されず、親プロセスのGIDを引き継ぐのみです、このため親プロセス側で --group-add しています
     # DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" awk -F ":" '/^docker:/{print $3}' /etc/group)"
-    DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" getent group docker | cut -d: -f3)"
+    echo "[shell] コンテナ内のdockerグループのGIDを取得するため一度起動します"
+    DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --entrypoint getent "$IMAGE_NAME:latest" group docker | cut -d: -f3)"
+
+    cat <<EOF
+[shell] コンテナを起動します
+  CONTAINER_CMD: $CONTAINER_CMD
+  VOLUME_OPTS: $VOLUME_OPTS
+  HOME: $HOME
+  whoami: $(whoami)
+  id -u: $(id -u)
+  id -g: $(id -g)
+  IMAGE_NAME: $IMAGE_NAME
+  DOCKER_SOCK_GID_INSIDE: ${DOCKER_SOCK_GID_INSIDE}
+EOF
 
     $CONTAINER_CMD \
       run \
         -d \
+        --user 0:0 \
         --network host \
         "${VOLUME_OPTS[@]}" \
         --ipc shareable \
@@ -127,10 +142,10 @@ if [ -z "$CONTAINER_ID" ]; then
         --env HOME="${HOME}" \
         --env UID="$(id -u)" \
         --env GID="$(id -g)" \
-        --env USER_NAME="$(whoami)" \
+        --env USER="$(whoami)" \
         -w "${HOME}" \
-        --group-add "${DOCKER_SOCK_GID_INSIDE}" \
         --privileged \
+        --group-add "${DOCKER_SOCK_GID_INSIDE}" \
         "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 

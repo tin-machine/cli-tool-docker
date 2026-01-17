@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# デフォルトのUIDとGID
-USER_ID="${UID:-503}"
-GROUP_ID="${GID:-1000}"
-USER_NAME="${USER:-customuser}"
+echo '[entorypoint] 開始'
+sleep 2
+# デフォルトのUIDとGID（環境変数が無ければ id から取得）
+USER_ID="${UID:-$(id -u)}"
+GROUP_ID="${GID:-$(id -g)}"
+USER_NAME="${USER_NAME:-${USER:-customuser}}"
 HOME_DIR="$HOME"
+GROUP_NAME="$USER_NAME"
 
 # ロケール設定（デフォルトは ja_JP.UTF-8、環境変数があればそれを使用）
 LOCALE_LANG="${LANG:-ja_JP.UTF-8}"
@@ -28,9 +31,28 @@ if [ "$(id -u)" -ne 0 ] || [ ! -w /etc/passwd ] || [ ! -w /etc/group ]; then
     CAN_MANAGE_ACCOUNTS=0
 fi
 
+cat <<EOF
+[entorypoint] コンテナの調整をしています
+  USER_ID: $USER_ID
+  GROUP_ID: $GROUP_ID
+  USER_NAME: $USER_NAME
+  HOME_DIR: $HOME_DIR
+  GROUP_NAME: $GROUP_NAME
+EOF
+sleep 2
+
 # グループ・ユーザー作成
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
-    if ! getent group "${GROUP_ID}" >/dev/null; then
+    existing_user="$(getent passwd "${USER_ID}" | cut -d: -f1)"
+    if [ -n "$existing_user" ] && [ "$existing_user" != "$USER_NAME" ]; then
+        echo "[entrypoint] WARN: UID ${USER_ID} は ${existing_user} に割り当て済みのため、そのユーザー名を使用します" >&2
+        USER_NAME="$existing_user"
+    fi
+
+    existing_group="$(getent group "${GROUP_ID}" | cut -d: -f1)"
+    if [ -n "$existing_group" ]; then
+        GROUP_NAME="$existing_group"
+    else
         if ! groupadd -g "${GROUP_ID}" "${USER_NAME}" 2>/tmp/groupadd.log; then
             echo "[entrypoint] WARN: groupadd に失敗しました: $(cat /tmp/groupadd.log)" >&2
             CAN_MANAGE_ACCOUNTS=0
@@ -38,15 +60,19 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
     fi
 
     if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ] && ! id -u "${USER_ID}" >/dev/null 2>&1; then
-        if ! useradd -M -s /bin/bash -u "${USER_ID}" -g "${GROUP_ID}" -d "${HOME_DIR}" "${USER_NAME}" 2>/tmp/useradd.log; then
+        if ! useradd -M -s /bin/bash -u "${USER_ID}" -g "${GROUP_NAME}" -d "${HOME_DIR}" "${USER_NAME}" 2>/tmp/useradd.log; then
             echo "[entrypoint] WARN: useradd に失敗しました: $(cat /tmp/useradd.log)" >&2
             CAN_MANAGE_ACCOUNTS=0
         fi
     fi
 
-    # シリアルポート用の dialout グループを付与（存在チェックはせずに実行し、失敗を通知）
-    if ! usermod -a -G dialout "${USER_NAME}" 2>/tmp/usermod.log; then
-        echo "[entrypoint] WARN: dialout グループへの追加に失敗しました: $(cat /tmp/usermod.log)" >&2
+    # シリアルポート用の dialout グループを付与（ユーザーが存在する場合のみ）
+    if id "${USER_NAME}" >/dev/null 2>&1; then
+        if ! usermod -a -G dialout "${USER_NAME}" 2>/tmp/usermod.log; then
+            echo "[entrypoint] WARN: dialout グループへの追加に失敗しました: $(cat /tmp/usermod.log)" >&2
+        fi
+    else
+        echo "[entrypoint] WARN: ${USER_NAME} ユーザーが存在しないため、dialout 追加をスキップします" >&2
     fi
 else
     echo "[entrypoint] WARN: /etc/passwd や /etc/group を変更できないため、ユーザー作成をスキップします" >&2
