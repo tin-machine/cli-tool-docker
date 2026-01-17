@@ -121,7 +121,7 @@ if [ -z "$CONTAINER_ID" ]; then
     cat <<EOF
 [shell] コンテナを起動します
   CONTAINER_CMD: $CONTAINER_CMD
-  VOLUME_OPTS: $VOLUME_OPTS
+  VOLUME_OPTS: ${VOLUME_OPTS[*]}
   HOME: $HOME
   whoami: $(whoami)
   id -u: $(id -u)
