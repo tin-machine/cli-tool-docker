@@ -145,6 +145,7 @@ EOF
         --env USER="$(whoami)" \
         -w "${HOME}" \
         --privileged \
+        --group-add 20 \
         --group-add "${DOCKER_SOCK_GID_INSIDE}" \
         "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
@@ -172,5 +173,16 @@ TERMINAL="${TERM:-screen-256color-bce}"
 
 # シェルを実行
 # $CONTAINER_CMD exec -it --security-opt seccomp=unconfined --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)" --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
-$CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)"  --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
 # $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
+# $CONTAINER_CMD exec -it --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" --user "$(id -u):$(id -g)" --privileged "$CONTAINER_ID" "$SHELL_CMD" "$@"
+
+# 下記はコンテナ内の setpriv --init-groups を使う（PAMに依存しない）
+# --init-groups が /etc/group を元に supplementary groups を設定します（= dialout を有効にしシリアルコンソールにアクセスできるようにする）
+# exec --user uid:gid で入ると supplementary groups が初期化されない
+# root で exec → su / setpriv --init-groups で降りると、initgroups(3) が走って解決
+$CONTAINER_CMD exec -it \
+  --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" \
+  --user 0:0 \
+  "$CONTAINER_ID" bash -lc \
+  'exec setpriv --reuid='"$(id -u)"' --regid='"$(id -g)"' --init-groups '"$SHELL_CMD"' "$@"' bash "$@"
+
