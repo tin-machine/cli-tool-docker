@@ -31,6 +31,8 @@ RUN apt-get update && \
       docker.io \
       docker-compose-v2 \
       fd-find \
+      ffmpeg \
+      file \
       fish \
       fortune-mod \
       fzf \
@@ -64,10 +66,12 @@ RUN apt-get update && \
       p7zip-rar \
       passwd \
       php \
+      poppler-utils \
       python3-full \
       python3-pip \
       python3-pynvim \
       rbenv \
+      resvg \
       ripgrep \
       ruby \
       ruby-dev \
@@ -84,6 +88,7 @@ RUN apt-get update && \
       tig \
       trash-cli \
       tree \
+      ueberzug \
       unzip \
       w3m-img \
       wget \
@@ -152,18 +157,18 @@ RUN VER=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/la
     curl -L -o /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${VER}/lazygit_${VER}_${A}.tar.gz"; \
     mkdir -p /out && tar -xzf /tmp/lazygit.tar.gz -C /out lazygit
 
-# # =========================
-# # yazi via cargo
-# # =========================
-# FROM build AS yazi
-# ENV CARGO_HOME=/opt/cargo \
-#     RUSTUP_HOME=/opt/rustup \
-#     PATH=/opt/cargo/bin:$PATH
-# # crates.io の yazi は build.rs で yazi-build 経由のインストールを要求する
-# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-#       sh -s -- -y --no-modify-path && \
-#     /opt/cargo/bin/cargo install --locked --force yazi-build && \
-#     /opt/cargo/bin/yazi --version
+# =========================
+# navi , zoxide via cargo
+# =========================
+FROM build AS cargo-install
+ENV CARGO_HOME=/opt/cargo \
+    RUSTUP_HOME=/opt/rustup \
+    PATH=/opt/cargo/bin:$PATH
+# crates.io の yazi は build.rs で yazi-build 経由のインストールを要求する
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+      sh -s -- -y --no-modify-path && \
+    /opt/cargo/bin/cargo install navi && \
+    /opt/cargo/bin/cargo install zoxide --locked
 
 # =========================
 # nerdctl(full) install (arch-aware)
@@ -227,6 +232,29 @@ RUN case "$TARGETARCH" in \
     curl -sSL -o /tmp/osc.tar.gz "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/osc_Linux_${OSC_A}.tar.gz"; \
     tar -xzf /tmp/osc.tar.gz -C /tmp; \
     install -D /tmp/osc /out/osc
+
+# =========================
+# yazi (prebuilt, arch-aware)
+# =========================
+FROM base AS yazi-install
+ARG TARGETARCH
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64)  YAZI_ARCH=x86_64-unknown-linux-gnu ;; \
+      arm64)  YAZI_ARCH=aarch64-unknown-linux-gnu ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    URL="https://github.com/sxyazi/yazi/releases/latest/download/yazi-${YAZI_ARCH}.zip"; \
+    echo "Fetching: ${URL}"; \
+    mkdir -p /tmp/yazi /out/bin /out/share; \
+    curl -fL -o /tmp/yazi.zip "${URL}"; \
+    unzip -q /tmp/yazi.zip -d /tmp/yazi; \
+    ROOT="/tmp/yazi"; \
+    if [ -d "/tmp/yazi/yazi-${YAZI_ARCH}" ]; then ROOT="/tmp/yazi/yazi-${YAZI_ARCH}"; fi; \
+    if [ -x "${ROOT}/yazi" ]; then install -Dm0755 "${ROOT}/yazi" /out/bin/yazi; fi; \
+    if [ -x "${ROOT}/ya" ]; then install -Dm0755 "${ROOT}/ya" /out/bin/ya; fi; \
+    if [ -d "${ROOT}/share" ]; then cp -a "${ROOT}/share/." /out/share/; fi
 
 # =========================
 # tools stage (集約)
@@ -331,16 +359,19 @@ SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:${PATH}"
 
-# Neovim / tmux / nerdctl / lazygit / CNI / yazi / ghq / osc の成果物を集約
+# Neovim / tmux / nerdctl / lazygit / CNI / cargo-install / ghq / osc の成果物を集約
 COPY --from=neovim-build     /opt/neovim            /opt/neovim
 COPY --from=tmux-build       /opt/tmux              /opt/tmux
 COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
 COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
 COPY --from=cni-install      /opt/cni               /opt/cni
-# COPY --from=yazi             /opt/cargo             /opt/cargo
-# COPY --from=yazi             /opt/rustup            /opt/rustup
+COPY --from=cargo-install    /opt/cargo             /opt/cargo
+COPY --from=cargo-install    /opt/rustup            /opt/rustup
 COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
 COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
+COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
+COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
+COPY --from=yazi-install     /out/share/            /usr/local/share/
 
 # エントリーポイント
 COPY entrypoint.bash /usr/local/bin/entrypoint.bash
