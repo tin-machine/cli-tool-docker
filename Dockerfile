@@ -18,6 +18,7 @@ RUN apt-get update && \
     locale-gen ja_JP.UTF-8 && \
     apt-get -y --no-install-recommends install \
       ansible \
+      ansible-lint \
       bat \
       build-essential \
       cargo \
