@@ -45,6 +45,7 @@ RUN apt-get update && \
       gosu \
       hugo \
       imagemagick \
+      inotify-tools \
       iproute2 \
       iputils-ping \
       jq \
