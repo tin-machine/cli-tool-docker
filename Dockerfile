@@ -20,6 +20,7 @@ RUN apt-get update && \
       ansible \
       ansible-lint \
       bat \
+      bubblewrap \
       build-essential \
       cargo \
       chafa \
@@ -68,6 +69,7 @@ RUN apt-get update && \
       p7zip-rar \
       passwd \
       php \
+      pkg-config \
       poppler-utils \
       python3-full \
       python3-pip \
@@ -90,7 +92,6 @@ RUN apt-get update && \
       tig \
       trash-cli \
       tree \
-      ueberzug \
       unzip \
       w3m-img \
       wget \
@@ -360,7 +361,7 @@ RUN luarocks install luacheck && \
 FROM tools AS final
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
-ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:${PATH}"
+ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 
 # Neovim / tmux / nerdctl / lazygit / CNI / cargo-install / ghq / osc の成果物を集約
 COPY --from=neovim-build     /opt/neovim            /opt/neovim

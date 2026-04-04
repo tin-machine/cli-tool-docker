@@ -4,18 +4,20 @@ registries:
   - type: standard
     ref: v4.346.0  # https://github.com/aquaproj/aqua-registry/releases
 
+# バージョンはきちんと記述する事、でないと最後のリンクがはられないケースがあった(lambroll)
 packages:
   - name: astral-sh/uv@0.6.14
   - name: aws/aws-cli@2.32.1
   - name: 99designs/aws-vault@v7.2.0  # aws認証情報の暗号化
+  - name: fujiwara/lambroll@v1.4.2
   - name: golangci/golangci-lint@v2.2.1  # Golangのlint
   - name: gohugoio/hugo@v0.146.6  # GolangのCMS
   - name: hadolint/hadolint@v2.12.0  # hadolint: Dockerfile linter
   - name: helm/helm@v3.17.3  # helm: Kubernetes パッケージマネージャ
+  - name: kayac/ecspresso
   - name: kubernetes/kubectl@v1.32.3  # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0  # bat: catの強化版（シンタックスハイライト付き）
+  - name: suzuki-shunsuke/pinact@v3.3.0
   - name: tofuutils/tenv@v4.4.0  # terraformバージョン管理
   - name: volta-cli/volta@v2.0.2  # nodeパッケージ管理
   - name: x-motemen/ghq@v1.8.0  # ghq: Gitリポジトリ管理
-  - name: suzuki-shunsuke/pinact@v3.3.0
-  - name: kayac/ecspresso
