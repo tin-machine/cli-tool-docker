@@ -32,6 +32,7 @@ RUN apt-get update && \
       dnsutils \
       docker.io \
       docker-compose-v2 \
+      eza \
       fd-find \
       ffmpeg \
       file \
