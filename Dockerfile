@@ -364,6 +364,12 @@ SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 
+# Ubuntu イメージには UID/GID 1000 の ubuntu ユーザーが含まれる場合がある。
+# ホストユーザーと同じ UID/GID のユーザーを entrypoint で作成できるようにし、
+# sudo/admin の補助グループを引き継がないよう削除する。
+RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
+    if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
+
 # Neovim / tmux / nerdctl / lazygit / CNI / cargo-install / ghq / osc の成果物を集約
 COPY --from=neovim-build     /opt/neovim            /opt/neovim
 COPY --from=tmux-build       /opt/tmux              /opt/tmux

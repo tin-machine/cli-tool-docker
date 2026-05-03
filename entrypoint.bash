@@ -72,6 +72,14 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
 
     # シリアルポート用の dialout グループを付与（ユーザーが存在する場合のみ）
     if id "${USER_NAME}" >/dev/null 2>&1; then
+        for admin_group in sudo admin; do
+            if id -nG "${USER_NAME}" | tr ' ' '\n' | grep -qx "${admin_group}"; then
+                if ! gpasswd -d "${USER_NAME}" "${admin_group}" 2>/tmp/gpasswd.log; then
+                    echo "[entrypoint] WARN: ${admin_group} グループからの削除に失敗しました: $(cat /tmp/gpasswd.log)" >&2
+                fi
+            fi
+        done
+
         if ! usermod -a -G dialout "${USER_NAME}" 2>/tmp/usermod.log; then
             echo "[entrypoint] WARN: dialout グループへの追加に失敗しました: $(cat /tmp/usermod.log)" >&2
         fi
