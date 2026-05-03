@@ -47,10 +47,11 @@ EOF
 
 # グループ・ユーザー作成
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
-    existing_user="$(getent passwd "${USER_ID}" | cut -d: -f1)"
-    if [ -n "$existing_user" ] && [ "$existing_user" != "$USER_NAME" ]; then
-        echo "[entrypoint] WARN: UID ${USER_ID} は ${existing_user} に割り当て済みのため、そのユーザー名を使用します" >&2
-        USER_NAME="$existing_user"
+    existing_users="$(getent passwd "${USER_ID}" | cut -d: -f1 | tr '\n' ' ')"
+    useradd_opts=()
+    if [ -n "$existing_users" ] && ! id "${USER_NAME}" >/dev/null 2>&1; then
+        echo "[entrypoint] WARN: UID ${USER_ID} は既に ${existing_users}に割り当て済みのため、${USER_NAME} を同じUIDのログイン名として追加します" >&2
+        useradd_opts=(-o)
     fi
 
     existing_group="$(getent group "${GROUP_ID}" | cut -d: -f1)"
@@ -63,10 +64,15 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
         fi
     fi
 
-    if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ] && ! id -u "${USER_ID}" >/dev/null 2>&1; then
-        if ! useradd -M -s /bin/bash -u "${USER_ID}" -g "${GROUP_NAME}" -d "${HOME_DIR}" "${USER_NAME}" 2>/tmp/useradd.log; then
+    if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ] && ! id "${USER_NAME}" >/dev/null 2>&1; then
+        if ! useradd "${useradd_opts[@]}" -M -s /bin/bash -u "${USER_ID}" -g "${GROUP_NAME}" -d "${HOME_DIR}" "${USER_NAME}" 2>/tmp/useradd.log; then
             echo "[entrypoint] WARN: useradd に失敗しました: $(cat /tmp/useradd.log)" >&2
             CAN_MANAGE_ACCOUNTS=0
+        fi
+    elif [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
+        current_uid="$(id -u "${USER_NAME}")"
+        if [ "${current_uid}" != "${USER_ID}" ]; then
+            echo "[entrypoint] WARN: ${USER_NAME} ユーザーは既に存在しますが UID が ${current_uid} のため、要求された UID ${USER_ID} には変更しません" >&2
         fi
     fi
 
