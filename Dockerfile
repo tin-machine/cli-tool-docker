@@ -22,6 +22,7 @@ RUN apt-get update && \
       bat \
       bubblewrap \
       build-essential \
+      cabextract \
       cargo \
       chafa \
       cmake \
@@ -78,6 +79,7 @@ RUN apt-get update && \
       rbenv \
       resvg \
       ripgrep \
+      rsync \
       ruby \
       ruby-dev \
       screen \
@@ -93,6 +95,7 @@ RUN apt-get update && \
       tig \
       trash-cli \
       tree \
+      unshield \
       unzip \
       w3m-img \
       wget \
