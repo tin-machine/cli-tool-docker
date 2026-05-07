@@ -8,8 +8,11 @@ SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
     LANG=ja_JP.UTF-8 \
     LC_ALL=ja_JP.UTF-8 \
+    PATH="/opt/dotnet-tools:${PATH}" \
     TZ=Asia/Tokyo
 
 RUN apt-get update && \
@@ -20,6 +23,7 @@ RUN apt-get update && \
       ansible \
       ansible-lint \
       bat \
+      binutils \
       bubblewrap \
       build-essential \
       cabextract \
@@ -33,6 +37,7 @@ RUN apt-get update && \
       dnsutils \
       docker.io \
       docker-compose-v2 \
+      dotnet-sdk-8.0 \
       eza \
       fd-find \
       ffmpeg \
@@ -46,9 +51,11 @@ RUN apt-get update && \
       golang \
       golang-docker-credential-helpers \
       gosu \
+      grim \
       hugo \
       imagemagick \
       inotify-tools \
+      innoextract \
       iproute2 \
       iputils-ping \
       jq \
@@ -61,10 +68,15 @@ RUN apt-get update && \
       lv \
       luarocks \
       make \
+      mesa-utils \
+      mono-utils \
       mutt \
+      msitools \
       mosh \
+      mupdf-tools \
       mysql-client \
       net-tools \
+      nmap \
       nkf \
       openjdk-21-jdk \
       p7zip-full \
@@ -76,6 +88,7 @@ RUN apt-get update && \
       python3-full \
       python3-pip \
       python3-pynvim \
+      qpdf \
       rbenv \
       resvg \
       ripgrep \
@@ -84,25 +97,35 @@ RUN apt-get update && \
       ruby-dev \
       screen \
       shellcheck \
+      slurp \
+      scrot \
       sqlite3 \
       strace \
       sudo \
+      tcpdump \
       tar \
       texlive-latex-base \
       texlive-latex-recommended \
       texlive-fonts-recommended \
+      tshark \
       tmux \
       tig \
       trash-cli \
       tree \
       unshield \
       unzip \
+      vulkan-tools \
       w3m-img \
       wget \
+      x11-utils \
+      xdotool \
+      xxd \
       yamllint \
       zoxide \
       zstd && \
     rm -rf /var/lib/apt/lists/*
+
+RUN dotnet tool install --tool-path /opt/dotnet-tools ilspycmd
 
 # =========================
 # Build toolchain stage
@@ -275,7 +298,7 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
-    PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH="/opt/dotnet-tools:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # 後続で使う最低限のツールを tools ステージで確実に用意
 RUN apt-get update && \
