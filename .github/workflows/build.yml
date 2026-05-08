@@ -21,10 +21,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run yamllint
         uses: ibiqlik/action-yamllint@v3
-      - name: Run shellcheck on entrypoint.sh
+      - name: Run shellcheck on shell scripts
         uses: azohra/shell-linter@v0.6.0
         with:
-          files: entrypoint.sh
+          files: entrypoint.bash shell.bash
 
   build-and-push:
     needs: lint
@@ -90,13 +90,13 @@ jobs:
           channel-id: 'C075AE23M9P'
           payload: |
             {
-              "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルド${{ job.status == 'success' && '成功' || '失敗' }}: ${{ github.repository }}",
+              "text": "ビルド結果: ${{ job.status }} / ${{ github.repository }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '✅' || '❌' }} ビルドが${{ job.status == 'success' && '成功' || '失敗' }}しました\n${{ github.event_name == 'pull_request' && format('<{0}|*{1}*>', github.event.pull_request.html_url, github.event.pull_request.title) || format('(Push to `{0}`)' , github.ref_name) }}"
+                    "text": "ビルド結果: ${{ job.status }}\n`${{ github.repository }}` / `${{ github.ref_name }}`"
                   }
                 },
                 {

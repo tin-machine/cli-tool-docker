@@ -111,7 +111,7 @@ if [ -z "$CONTAINER_ID" ]; then
     # - 起動したコンテナのプロセスがdockerグループに属している
     # - --group-add にコンテナ内のdockerグループのGIDを設定する(GIDは将来的に変わる可能性があります)
     #   - このため、一度、コンテナを起動、コンテナ内のdockerのGIDを取得しています
-    #   - entrypoint.shで USER_NAME, UID, GID を必要としているのでダミーとして入れています
+    #   - entrypoint.bashで USER_NAME, UID, GID を必要としているのでダミーとして入れています
     # login / sshd / su / newgrp などのログイン系プログラムは、ユーザ認証後に glibc の initgroups(3) を呼びます。
     # が、コンテナの場合、fish -lとしてもinitgroups(3)は処理されず、親プロセスのGIDを引き継ぐのみです、このため親プロセス側で --group-add しています
     # DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" awk -F ":" '/^docker:/{print $3}' /etc/group)"
@@ -185,4 +185,3 @@ $CONTAINER_CMD exec -it \
   --user 0:0 \
   "$CONTAINER_ID" bash -lc \
   'exec setpriv --reuid='"$(id -u)"' --regid='"$(id -g)"' --init-groups '"$SHELL_CMD"' "$@"' bash "$@"
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo '[entorypoint] 開始'
+echo '[entrypoint] 開始'
 # デフォルトのUIDとGID（環境変数が無ければ id から取得）
 USER_ID="${UID:-$(id -u)}"
 GROUP_ID="${GID:-$(id -g)}"
@@ -32,7 +32,7 @@ fi
 
 # shell.bashから起動した場合、下記の情報はsudo nerdctl logs -f <コンテナID> で確認可能
 cat <<EOF
-[entorypoint] コンテナの調整をしています
+[entrypoint] コンテナの調整をしています
   USER_ID: $USER_ID
   GROUP_ID: $GROUP_ID
   USER_NAME: $USER_NAME

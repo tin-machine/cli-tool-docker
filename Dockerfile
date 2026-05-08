@@ -1,7 +1,7 @@
 # =========================
 # Common base
 # =========================
-FROM ubuntu:25.04 AS base
+FROM ubuntu:26.04 AS base
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 # Buildx がサポートするアーキテクチャ

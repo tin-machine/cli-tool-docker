@@ -1,6 +1,7 @@
+---
 name: Scheduled Vulnerability Scan
 
-on:
+'on':
   workflow_dispatch:
   schedule:
     # 毎週金曜日の午前8時(UTC)に実行 (日本時間の午後5時)
@@ -11,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read # ghcr.ioからイメージをpullするために必要
+      packages: read  # ghcr.ioからイメージをpullするために必要
 
     steps:
       - name: Scan latest image with Trivy
@@ -43,7 +44,7 @@ jobs:
         if: steps.check_results.outputs.vulnerabilities_found == 'true'
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: 'C075AE23M9P' # 実際のチャンネルIDに置き換えてください
+          channel-id: 'C075AE23M9P'  # 実際のチャンネルIDに置き換えてください
           initial_comment: '⚠️ *定期脆弱性スキャンレポート*\n`latest`イメージで脆弱性が検出されました。詳細は添付ファイルを確認してください。'
           file: trivy-results.txt
         env:
@@ -53,7 +54,7 @@ jobs:
         if: steps.check_results.outputs.vulnerabilities_found == 'false'
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: 'C075AE23M9P' # 実際のチャンネルIDに置き換えてください
+          channel-id: 'C075AE23M9P'  # 実際のチャンネルIDに置き換えてください
           payload: |
             {
               "text": "✅ 定期脆弱性スキャン完了: ${{ github.repository }}",
