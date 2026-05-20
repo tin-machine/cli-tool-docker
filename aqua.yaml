@@ -14,7 +14,7 @@ packages:
   - name: gohugoio/hugo@v0.146.6  # GolangのCMS
   - name: hadolint/hadolint@v2.12.0  # hadolint: Dockerfile linter
   - name: helm/helm@v3.17.3  # helm: Kubernetes パッケージマネージャ
-  - name: kayac/ecspresso
+  - name: kayac/ecspresso@v2.8.4
   - name: kubernetes/kubectl@v1.32.3  # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0  # bat: catの強化版（シンタックスハイライト付き）
   - name: suzuki-shunsuke/pinact@v3.3.0

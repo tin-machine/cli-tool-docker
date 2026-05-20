@@ -8,11 +8,8 @@ SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
-    DOTNET_NOLOGO=1 \
     LANG=ja_JP.UTF-8 \
     LC_ALL=ja_JP.UTF-8 \
-    PATH="/opt/dotnet-tools:${PATH}" \
     TZ=Asia/Tokyo
 
 RUN apt-get update && \
@@ -34,10 +31,9 @@ RUN apt-get update && \
       ca-certificates \
       curl \
       direnv \
-      dnsutils \
+      bind9-dnsutils \
       docker.io \
       docker-compose-v2 \
-      dotnet-sdk-8.0 \
       eza \
       fd-find \
       ffmpeg \
@@ -69,7 +65,6 @@ RUN apt-get update && \
       luarocks \
       make \
       mesa-utils \
-      mono-utils \
       mutt \
       msitools \
       mosh \
@@ -79,8 +74,8 @@ RUN apt-get update && \
       nmap \
       nkf \
       openjdk-21-jdk \
-      p7zip-full \
-      p7zip-rar \
+      7zip \
+      7zip-rar \
       passwd \
       php \
       pkg-config \
@@ -121,11 +116,8 @@ RUN apt-get update && \
       xdotool \
       xxd \
       yamllint \
-      zoxide \
       zstd && \
     rm -rf /var/lib/apt/lists/*
-
-RUN dotnet tool install --tool-path /opt/dotnet-tools ilspycmd
 
 # =========================
 # Build toolchain stage
@@ -143,7 +135,7 @@ RUN apt-get update && \
       libssl-dev \
       libxcb-shape0-dev \
       libxcb-xfixes0-dev \
-      ncurses-dev \
+      libncurses-dev \
       ninja-build \
       shfmt \
       pkg-config && \
@@ -198,7 +190,9 @@ ENV CARGO_HOME=/opt/cargo \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
       sh -s -- -y --no-modify-path && \
     /opt/cargo/bin/cargo install navi && \
-    /opt/cargo/bin/cargo install zoxide --locked
+    /opt/cargo/bin/cargo install zoxide --locked && \
+    install -Dm0755 /opt/cargo/bin/navi /out/bin/navi && \
+    install -Dm0755 /opt/cargo/bin/zoxide /out/bin/zoxide
 
 # =========================
 # nerdctl(full) install (arch-aware)
@@ -298,7 +292,7 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
-    PATH="/opt/dotnet-tools:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # 後続で使う最低限のツールを tools ステージで確実に用意
 RUN apt-get update && \
@@ -316,11 +310,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # gcc-11 参照を回避（必要要件に合わせて）
-RUN ln -sf /usr/bin/gcc-13 /usr/bin/gcc-11 || true
-
-# Julia
-RUN curl -fsSL https://install.julialang.org | sh -s -- --yes --path "/usr/local/julia" && \
-    /usr/local/julia/bin/juliaup add release
+RUN ln -sf "$(command -v gcc)" /usr/bin/gcc-11
 
 # Google Cloud SDK
 RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="${CLOUDSDK_INSTALL_DIR}"
@@ -346,7 +336,8 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
       @openai/codex \
       clawdbot \
       jsonlint \
-      markdownlint-cli
+      markdownlint-cli && \
+    rm -rf /root/.npm /root/.cache/node-gyp
 
 # sops
 ARG SOPS_VERSION=v3.8.1
@@ -362,6 +353,27 @@ RUN set -eux; \
     chmod +x /usr/local/bin/sops; \
     /usr/local/bin/sops --version
 
+# Chawan TUI browser
+ARG CHAWAN_VERSION=0.4.0
+ARG CHAWAN_DEB_SHA256=858eb1fb02897a24af4e1d20a17a82692dad100b09ef0064f5f9199e3647dda1
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) \
+        CHAWAN_VERSION_DASH="${CHAWAN_VERSION//./-}"; \
+        CHAWAN_DEB="/tmp/chawan-${CHAWAN_VERSION}-amd64.deb"; \
+        curl -fsSL -o "${CHAWAN_DEB}" "https://git.sr.ht/~bptato/chawan/refs/download/v${CHAWAN_VERSION}/chawan-${CHAWAN_VERSION_DASH}-amd64.deb"; \
+        echo "${CHAWAN_DEB_SHA256}  ${CHAWAN_DEB}" | sha256sum -c -; \
+        dpkg -i "${CHAWAN_DEB}"; \
+        rm -f "${CHAWAN_DEB}"; \
+        cha --version; \
+        ;; \
+      arm64) \
+        echo "Chawan ${CHAWAN_VERSION} official binary package is amd64-only; skipping for TARGETARCH=${TARGETARCH}"; \
+        ;; \
+      *) \
+        echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac
+
 # --- Stylua (prebuilt) ---
 ARG STYLUA_VERSION=v0.20.0
 WORKDIR /tmp/stylua
@@ -374,7 +386,8 @@ RUN case "$TARGETARCH" in \
     echo "Fetching: ${URL}"; \
     curl -fL -o stylua.zip "${URL}"; \
     unzip -q stylua.zip; \
-    install -m0755 stylua /usr/local/bin/stylua
+    install -m0755 stylua /usr/local/bin/stylua; \
+    rm -f stylua.zip stylua
 WORKDIR /
 RUN rm -rf /tmp/stylua
 
@@ -396,14 +409,13 @@ ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
-# Neovim / tmux / nerdctl / lazygit / CNI / cargo-install / ghq / osc の成果物を集約
+# Neovim / tmux / nerdctl / lazygit / CNI / cargo-built tools / ghq / osc の成果物を集約
 COPY --from=neovim-build     /opt/neovim            /opt/neovim
 COPY --from=tmux-build       /opt/tmux              /opt/tmux
 COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
 COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
 COPY --from=cni-install      /opt/cni               /opt/cni
-COPY --from=cargo-install    /opt/cargo             /opt/cargo
-COPY --from=cargo-install    /opt/rustup            /opt/rustup
+COPY --from=cargo-install    /out/bin/              /usr/local/bin/
 COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
 COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
 COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
