@@ -18,6 +18,6 @@ packages:
   - name: kubernetes/kubectl@v1.32.3  # kubectl: Kubernetes CLI
   - name: sharkdp/bat@v0.25.0  # bat: catの強化版（シンタックスハイライト付き）
   - name: suzuki-shunsuke/pinact@v3.3.0
-  - name: tofuutils/tenv@v4.4.0  # terraformバージョン管理
+  - name: tofuutils/tenv@v4.4.0  # Terraform/OpenTofu/Terragrunt/Atmos バージョン管理
   - name: volta-cli/volta@v2.0.2  # nodeパッケージ管理
   - name: x-motemen/ghq@v1.8.0  # ghq: Gitリポジトリ管理

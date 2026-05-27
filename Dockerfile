@@ -236,23 +236,17 @@ RUN case "$TARGETARCH" in \
     ls -1 /opt/cni/bin
 
 # =========================
-# go cli tools (ghq, osc52)
+# osc52 CLI
 # =========================
 FROM build AS go-cli-install
 ARG TARGETARCH
-ARG GHQ_VERSION=v1.8.0
 ARG OSC_VERSION=v0.4.8
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN case "$TARGETARCH" in \
-      amd64)  GHQ_A=amd64; OSC_A=x86_64 ;; \
-      arm64)  GHQ_A=arm64; OSC_A=arm64 ;; \
+      amd64)  OSC_A=x86_64 ;; \
+      arm64)  OSC_A=arm64 ;; \
       *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
     esac; \
-    # ghq
-    curl -sSL -o /tmp/ghq.zip "https://github.com/x-motemen/ghq/releases/download/${GHQ_VERSION}/ghq_linux_${GHQ_A}.zip"; \
-    unzip /tmp/ghq.zip -d /tmp; \
-    install -D /tmp/ghq_linux_${GHQ_A}/ghq /out/ghq; \
-    # osc (OSC52)
     curl -sSL -o /tmp/osc.tar.gz "https://github.com/theimpostor/osc/releases/download/${OSC_VERSION}/osc_Linux_${OSC_A}.tar.gz"; \
     tar -xzf /tmp/osc.tar.gz -C /tmp; \
     install -D /tmp/osc /out/osc
@@ -293,21 +287,6 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
     PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-# 後続で使う最低限のツールを tools ステージで確実に用意
-RUN apt-get update && \
-    apt-get -y --no-install-recommends install \
-      ca-certificates \
-      curl \
-      git \
-      jq \
-      ruby \
-      ruby-dev \
-      luarocks \
-      python3-pip \
-      build-essential \
-      gcc && \
-    rm -rf /var/lib/apt/lists/*
 
 # gcc-11 参照を回避（必要要件に合わせて）
 RUN ln -sf "$(command -v gcc)" /usr/bin/gcc-11
@@ -376,24 +355,41 @@ RUN set -eux; \
 
 # --- Stylua (prebuilt) ---
 ARG STYLUA_VERSION=v0.20.0
-WORKDIR /tmp/stylua
-RUN case "$TARGETARCH" in \
+RUN set -eux; \
+    tmpdir="$(mktemp -d)"; \
+    trap 'rm -rf "$tmpdir"' EXIT; \
+    case "$TARGETARCH" in \
       amd64)  A=x86_64 ;; \
       arm64)  A=aarch64 ;; \
       *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
     esac; \
     URL="https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-${A}.zip"; \
     echo "Fetching: ${URL}"; \
-    curl -fL -o stylua.zip "${URL}"; \
-    unzip -q stylua.zip; \
-    install -m0755 stylua /usr/local/bin/stylua; \
-    rm -f stylua.zip stylua
-WORKDIR /
-RUN rm -rf /tmp/stylua
+    curl -fL -o "$tmpdir/stylua.zip" "${URL}"; \
+    unzip -q "$tmpdir/stylua.zip" -d "$tmpdir"; \
+    install -m0755 "$tmpdir/stylua" /usr/local/bin/stylua
 
 # luacheck / Ruby 開発系
 RUN luarocks install luacheck && \
     gem install --no-document ruby-lsp rubocop erb_lint
+
+# =========================
+# Runtime artifacts
+# =========================
+FROM scratch AS artifacts
+
+# Neovim / tmux / nerdctl / lazygit / CNI / cargo-built tools / osc の成果物を集約
+COPY --from=neovim-build     /opt/neovim            /opt/neovim
+COPY --from=tmux-build       /opt/tmux              /opt/tmux
+COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
+COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
+COPY --from=cni-install      /opt/cni               /opt/cni
+COPY --from=cargo-install    /out/bin/              /usr/local/bin/
+COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
+COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
+COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
+COPY --from=yazi-install     /out/share/            /usr/local/share/
+COPY --chmod=0755 entrypoint.bash /usr/local/bin/entrypoint.bash
 
 # =========================
 # Final runtime image
@@ -409,22 +405,7 @@ ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
-# Neovim / tmux / nerdctl / lazygit / CNI / cargo-built tools / ghq / osc の成果物を集約
-COPY --from=neovim-build     /opt/neovim            /opt/neovim
-COPY --from=tmux-build       /opt/tmux              /opt/tmux
-COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
-COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
-COPY --from=cni-install      /opt/cni               /opt/cni
-COPY --from=cargo-install    /out/bin/              /usr/local/bin/
-COPY --from=go-cli-install   /out/ghq               /usr/local/bin/ghq
-COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
-COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
-COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
-COPY --from=yazi-install     /out/share/            /usr/local/share/
-
-# エントリーポイント
-COPY entrypoint.bash /usr/local/bin/entrypoint.bash
-RUN chmod +x /usr/local/bin/entrypoint.bash
+COPY --from=artifacts / /
 ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # デフォルトのコマンド
