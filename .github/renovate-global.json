@@ -1,0 +1,6 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-global-schema.json",
+  "allowedCommands": [
+    "^bash \\.github/scripts/update-aqua-checksum\\.bash$"
+  ]
+}

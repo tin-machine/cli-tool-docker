@@ -11,6 +11,15 @@
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "7 days",
   "internalChecksFilter": "strict",
+  "postUpgradeTasks": {
+    "commands": [
+      "bash .github/scripts/update-aqua-checksum.bash"
+    ],
+    "fileFilters": [
+      "aqua-checksums.json"
+    ],
+    "executionMode": "branch"
+  },
   "packageRules": [
     {
       "matchDepTypes": ["devDependencies"],
