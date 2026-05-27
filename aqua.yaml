@@ -2,7 +2,11 @@
 version: 1.0.0
 registries:
   - type: standard
-    ref: v4.346.0  # https://github.com/aquaproj/aqua-registry/releases
+    ref: v4.346.0  # renovate: depName=aquaproj/aqua-registry
+
+checksum:
+  enabled: true
+  require_checksum: true
 
 # バージョンはきちんと記述する事、でないと最後のリンクがはられないケースがあった(lambroll)
 packages:

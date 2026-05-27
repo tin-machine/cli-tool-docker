@@ -43,6 +43,22 @@ Ubuntu 26.04 移行時の package rename、Chawan 追加、smoke test、image si
 
 # 設定の背景
 
+## Renovate / aqua
+
+Renovate は `renovate.json` で GitHub Actions の digest pin と aqua package 更新を扱う。
+release timestamp が取れる version update は `minimumReleaseAge: 7 days` の対象なので、新しい release が出ても 7 日経ってから PR が来る。
+GitHub Actions の初回 pin や digest 更新は、Renovate の update type 上 `minimumReleaseAge` の対象外になる場合がある。
+
+`aqua.yaml` は checksum 必須にしている。
+aqua 管理 package を追加・更新した時は、次で `aqua-checksums.json` も更新する。
+
+```bash
+aqua update-checksum -prune
+```
+
+aquaproj の Renovate preset は `aqua.yaml` の version 更新を検出するが、`aqua-checksums.json` の再生成までは行わない。
+Renovate が aqua package 更新 PR を作った場合は、checksum 更新を手元で足すか、別途 CI 化する必要がある。
+
 ## Terraform / OpenTofu / Terragrunt
 
 Terraform 系のバージョン管理は `aqua.yaml` の `tofuutils/tenv` で行う。
