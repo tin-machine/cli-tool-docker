@@ -296,6 +296,7 @@ RUN curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --ins
 
 # aqua 本体
 COPY aqua.yaml /usr/local/etc/aqua.yaml
+COPY aqua-checksums.json /usr/local/etc/aqua-checksums.json
 # 作業ディレクトリを切り替えて実行（cd 不要）
 WORKDIR /usr/local/etc
 RUN curl -sSfL -o /tmp/aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
