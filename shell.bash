@@ -24,6 +24,16 @@ wait_for_container() {
     exit 1
 }
 
+get_path_gid() {
+    local path="$1"
+
+    if stat -Lc '%g' "$path" >/dev/null 2>&1; then
+        stat -Lc '%g' "$path"
+    else
+        stat -L -f '%g' "$path"
+    fi
+}
+
 # コンテナ管理ツールを決定
 if command -v docker >/dev/null 2>&1; then
     CONTAINER_CMD="docker"
@@ -47,11 +57,10 @@ CONTAINER_NAME="cli-tool-docker"
 ARCH=$(uname -s)
 case "$ARCH" in
     Darwin)
-        IMAGE_NAME="cli-tool-docker"
+        IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-cli-tool-docker}"
         ;;
     Linux)
-        IMAGE_NAME="ghcr.io/tin-machine/cli-tool-docker"
-        # IMAGE_NAME="cli-tool-docker" # ローカルでテストする場合はこちらを使用
+        IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-ghcr.io/tin-machine/cli-tool-docker}"
         ;;
     *)
         echo "[shell] Error: 未対応のアーキテクチャ ($ARCH) です。" >&2
@@ -83,7 +92,21 @@ if [ -z "$CONTAINER_ID" ]; then
     # ボリューム設定
     # /var/run/docker.sock をマウントしているのは、コンテナ内で更にコンテナを起動したいために設定しています
     # (但しRancher Desktopの場合、sudoアクセスが必要)
-    VOLUME_OPTS=(--volume /var/run/docker.sock:/var/run/docker.sock)
+    VOLUME_OPTS=()
+    DOCKER_GROUP_OPTS=()
+    DOCKER_SOCK_GID=""
+    if [ -S /var/run/docker.sock ]; then
+        VOLUME_OPTS+=(--volume /var/run/docker.sock:/var/run/docker.sock)
+        DOCKER_SOCK_GID="$(get_path_gid /var/run/docker.sock)"
+        if [ -n "$DOCKER_SOCK_GID" ]; then
+            DOCKER_GROUP_OPTS+=(--group-add "${DOCKER_SOCK_GID}")
+        else
+            echo "[shell] ⚠️ /var/run/docker.sock の GID を取得できませんでした。docker は権限不足になるかもしれません。" >&2
+        fi
+    else
+        echo "[shell] ⚠️ /var/run/docker.sock が見つかりません。docker は使えないかもしれません。" >&2
+    fi
+
     if [ -S /run/containerd/containerd.sock ]; then
         VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
     else
@@ -103,20 +126,14 @@ if [ -z "$CONTAINER_ID" ]; then
     fi
 
     INIT_OPT=()
-    if [ "$CONTAINER_CMD" = "nerdctl" ]; then
+    if [ "${CONTAINER_CMD##* }" = "nerdctl" ]; then
         INIT_OPT+=(--init)
     fi
 
-    # docker in docker でコンテナを起動したい。この場合、必要な事として
-    # - 起動したコンテナのプロセスがdockerグループに属している
-    # - --group-add にコンテナ内のdockerグループのGIDを設定する(GIDは将来的に変わる可能性があります)
-    #   - このため、一度、コンテナを起動、コンテナ内のdockerのGIDを取得しています
-    #   - entrypoint.bashで USER_NAME, UID, GID を必要としているのでダミーとして入れています
+    # Docker socket を bind mount する場合、必要なのは image 内の docker group GID ではなく
+    # host 側 /var/run/docker.sock の数値 GID。entrypoint でこの GID の group を作業 user に付ける。
     # login / sshd / su / newgrp などのログイン系プログラムは、ユーザ認証後に glibc の initgroups(3) を呼びます。
     # が、コンテナの場合、fish -lとしてもinitgroups(3)は処理されず、親プロセスのGIDを引き継ぐのみです、このため親プロセス側で --group-add しています
-    # DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --env USER_NAME='customuser' --env UID=1002 --env GID=1002 "$IMAGE_NAME:latest" awk -F ":" '/^docker:/{print $3}' /etc/group)"
-    echo "[shell] コンテナ内のdockerグループのGIDを取得するため一度起動します"
-    DOCKER_SOCK_GID_INSIDE="$($CONTAINER_CMD run --rm --entrypoint getent "$IMAGE_NAME:latest" group docker | cut -d: -f3)"
 
     cat <<EOF
 [shell] コンテナを起動します
@@ -127,12 +144,13 @@ if [ -z "$CONTAINER_ID" ]; then
   id -u: $(id -u)
   id -g: $(id -g)
   IMAGE_NAME: $IMAGE_NAME
-  DOCKER_SOCK_GID_INSIDE: ${DOCKER_SOCK_GID_INSIDE}
+  DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
 EOF
 
     $CONTAINER_CMD \
       run \
         -d \
+        --name "$CONTAINER_NAME" \
         --user 0:0 \
         --network host \
         "${VOLUME_OPTS[@]}" \
@@ -143,10 +161,11 @@ EOF
         --env UID="$(id -u)" \
         --env GID="$(id -g)" \
         --env USER="$(whoami)" \
+        --env DOCKER_SOCK_GID="${DOCKER_SOCK_GID}" \
         -w "${HOME}" \
         --privileged \
         --group-add 20 \
-        --group-add "${DOCKER_SOCK_GID_INSIDE}" \
+        "${DOCKER_GROUP_OPTS[@]}" \
         "${INIT_OPT[@]}" \
         "$IMAGE_NAME:latest"
 

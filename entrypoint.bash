@@ -7,6 +7,7 @@ GROUP_ID="${GID:-$(id -g)}"
 USER_NAME="${USER_NAME:-${USER:-customuser}}"
 HOME_DIR="$HOME"
 GROUP_NAME="$USER_NAME"
+DOCKER_SOCK_GID="${DOCKER_SOCK_GID:-}"
 
 # ロケール設定（デフォルトは ja_JP.UTF-8、環境変数があればそれを使用）
 LOCALE_LANG="${LANG:-ja_JP.UTF-8}"
@@ -38,12 +39,44 @@ cat <<EOF
   USER_NAME: $USER_NAME
   HOME_DIR: $HOME_DIR
   GROUP_NAME: $GROUP_NAME
+  DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
   LOCALE_LANG: $LOCALE_LANG
   LOCALE_LANGUAGE: $LOCALE_LANGUAGE
   LOCALE_LC_ALL: $LOCALE_LC_ALL
   TIMEZONE: $TIMEZONE
   CAN_MANAGE_ACCOUNTS: $CAN_MANAGE_ACCOUNTS
 EOF
+
+add_user_to_gid_group() {
+    local gid="$1"
+    local base_group_name="$2"
+    local target_group=""
+
+    if [ -z "$gid" ]; then
+        return
+    fi
+    if [[ ! "$gid" =~ ^[0-9]+$ ]]; then
+        echo "[entrypoint] WARN: ${base_group_name} 用 GID が数値ではないためスキップします: ${gid}" >&2
+        return
+    fi
+
+    target_group="$(getent group "$gid" | cut -d: -f1)"
+    if [ -z "$target_group" ]; then
+        target_group="$base_group_name"
+        if getent group "$target_group" >/dev/null 2>&1; then
+            target_group="${base_group_name}-${gid}"
+        fi
+
+        if ! groupadd -g "$gid" "$target_group" 2>/tmp/groupadd-"${base_group_name}".log; then
+            echo "[entrypoint] WARN: ${base_group_name} group の作成に失敗しました: $(cat /tmp/groupadd-"${base_group_name}".log)" >&2
+            return
+        fi
+    fi
+
+    if ! usermod -a -G "$target_group" "${USER_NAME}" 2>/tmp/usermod-"${base_group_name}".log; then
+        echo "[entrypoint] WARN: ${USER_NAME} の ${target_group} group 追加に失敗しました: $(cat /tmp/usermod-"${base_group_name}".log)" >&2
+    fi
+}
 
 # グループ・ユーザー作成
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
@@ -89,6 +122,8 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
         if ! usermod -a -G dialout "${USER_NAME}" 2>/tmp/usermod.log; then
             echo "[entrypoint] WARN: dialout グループへの追加に失敗しました: $(cat /tmp/usermod.log)" >&2
         fi
+
+        add_user_to_gid_group "$DOCKER_SOCK_GID" docker-host
     else
         echo "[entrypoint] WARN: ${USER_NAME} ユーザーが存在しないため、dialout 追加をスキップします" >&2
     fi

@@ -99,7 +99,7 @@ Dockerfile では Ubuntu package の `neovim` ではなく、upstream の `relea
 
 - `shell.bash` はコンテナを `--user 0:0` で起動し、ホストの `HOME`、Docker socket、containerd socket などをマウントし、`UID`、`GID`、`USER`、`HOME` を環境変数で渡す。
 - `entrypoint.bash` は起動時にホストと同じ UID/GID のユーザーを作成する。既に同じ UID が存在する場合は `useradd -o` を使い、Ubuntu イメージ由来の既存ユーザーと衝突しても作業ユーザー名で入れるようにする。
-- `entrypoint.bash` は作業ユーザーから `sudo`/`admin` 補助グループを外し、必要な場合に `dialout` を付与する。これはシリアルポートアクセスを想定したもの。
+- `entrypoint.bash` は作業ユーザーから `sudo`/`admin` 補助グループを外し、必要な場合に `dialout` と Docker socket 用 group を付与する。`dialout` はシリアルポートアクセスを想定したもの。
 - 実際にシェルへ入る時は、`docker exec --user uid:gid` を直接使わず、root で `exec` してからコンテナ内の `setpriv --init-groups` で作業ユーザーへ降りる。これにより `/etc/group` に基づく supplementary groups が反映される。
 
 `entrypoint.bash` の最後では `gosu "${USER_NAME}" "$@"` を使う。
@@ -114,6 +114,43 @@ setpgid: デバイスに対する不適切なioctlです
 ```
 
 このため、現在は `su` に依存せず `gosu` と `setpriv` を使う構成にしている。
+
+# コンテナ内から Docker を使う
+
+この image では、コンテナ内で別の Docker daemon を起動する Docker-in-Docker ではなく、ホストの `/var/run/docker.sock` を bind mount してホストの Docker daemon を操作する。
+いわゆる Docker-outside-of-Docker の形になる。
+
+socket は通常 `0660 root:<docker group gid>` なので、コンテナ内の作業ユーザーがその数値 GID を supplementary group として持つ必要がある。
+重要なのは image 内の `docker` group の GID ではなく、ホスト上の `/var/run/docker.sock` の GID である。
+
+`shell.bash` は起動時にホストの socket GID を取得し、`DOCKER_SOCK_GID` として渡す。
+`entrypoint.bash` はその GID の group をコンテナ内に作成し、作業ユーザーへ追加する。
+これにより、後続の対話 shell で `setpriv --init-groups` を使っても Docker socket 用 group が残る。
+
+確認コマンド:
+
+```bash
+stat -Lc '%n %a %u %g %U %G %F' /var/run/docker.sock
+id -a
+docker version
+docker ps
+```
+
+既に古い設定で起動済みの `cli-tool-docker` コンテナには、entrypoint の group 追加が反映されない。
+また `entrypoint.bash` は image に焼かれるため、この修正を使うには image rebuild か、更新済み image の pull が必要になる。
+ローカルで確認する場合は、`CLI_TOOL_DOCKER_IMAGE` で使う image repository を差し替えられる。
+
+```bash
+docker build --progress=plain -t cli-tool-docker:latest .
+docker ps --format '{{.ID}} {{.Image}} {{.Names}}' | grep cli-tool-docker
+docker stop <container-id>
+docker rm <container-id>
+CLI_TOOL_DOCKER_IMAGE=cli-tool-docker ./shell.bash
+```
+
+`/run/containerd/containerd.sock` は環境によって `0660 root:root` になっている。
+この場合、非 root の作業ユーザーから `nerdctl` でホスト containerd を直接操作するには、ホスト側で socket group を設計し直す必要がある。
+日常用途では、まず Docker socket 経由の `docker`/`docker compose` を使う方が単純。
 
 # docker in docker だと osxkeychain が見つからないエラーが出る
 
