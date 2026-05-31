@@ -333,6 +333,26 @@ RUN set -eux; \
     chmod +x /usr/local/bin/sops; \
     /usr/local/bin/sops --version
 
+# lychee link checker
+ARG LYCHEE_VERSION=lychee-v0.24.2
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) \
+        LYCHEE_ARCH=x86_64-unknown-linux-musl; \
+        LYCHEE_SHA256=73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5 ;; \
+      arm64) \
+        LYCHEE_ARCH=aarch64-unknown-linux-gnu; \
+        LYCHEE_SHA256=91a7bd65685da41b90ccb9bc867a3d649a7818042dae04ff405e55a25bddee4c ;; \
+      *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    LYCHEE_TARBALL="/tmp/lychee.tar.gz"; \
+    curl -fsSL -o "$LYCHEE_TARBALL" "https://github.com/lycheeverse/lychee/releases/download/${LYCHEE_VERSION}/lychee-${LYCHEE_ARCH}.tar.gz"; \
+    echo "${LYCHEE_SHA256}  ${LYCHEE_TARBALL}" | sha256sum -c -; \
+    tar -xzf "$LYCHEE_TARBALL" -C /tmp; \
+    install -m0755 "/tmp/lychee-${LYCHEE_ARCH}/lychee" /usr/local/bin/lychee; \
+    rm -rf "$LYCHEE_TARBALL" "/tmp/lychee-${LYCHEE_ARCH}"; \
+    lychee --version
+
 # Chawan TUI browser
 ARG CHAWAN_VERSION=0.4.0
 ARG CHAWAN_DEB_SHA256=858eb1fb02897a24af4e1d20a17a82692dad100b09ef0064f5f9199e3647dda1

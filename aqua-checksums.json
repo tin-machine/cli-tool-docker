@@ -176,6 +176,36 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_darwin_amd64.tar.gz",
+      "checksum": "FB4B18E55E1E9E5289E372B0B59413B350EE6717F548ECED339479E27A5AB41C",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_darwin_arm64.tar.gz",
+      "checksum": "E52016699CD52A4D4D713990FC2D104951C3C9B324D18F46547349394F6D2255",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_linux_amd64.tar.gz",
+      "checksum": "C2E80080725A96B4EA50E0C3FC98952882415080982DDE0791A0DCEC614DDE50",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_linux_arm64.tar.gz",
+      "checksum": "EA207251004E9E6078ABAF59700191353ABF0F8C977613876CC06E48AD1FEDF1",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_windows_amd64.zip",
+      "checksum": "40B1C97E5E519712915B00ECDE19DC9F2DEEDB5DE68D01C5BAFE4ABE6E0EB9FF",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_windows_arm64.zip",
+      "checksum": "D4A566676FCBF242812378DC62C798828F27B7616810BC18BCBABE72151C7A36",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/sharkdp/bat/v0.25.0/bat-v0.25.0-aarch64-apple-darwin.tar.gz",
       "checksum": "B3ED5A7515545445881F1036F0CC1B708C2B86CBCE01C1B4033F38E0CFCC7B3C",
       "algorithm": "sha256"
