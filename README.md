@@ -106,6 +106,9 @@ Dockerfile では Ubuntu package の `neovim` ではなく、upstream の `relea
 このため default の `tail -F /dev/null` も作成済みユーザーで実行される。
 ただし、後続の対話シェルでは `shell.bash` 側の `setpriv --init-groups` が重要になる。
 
+`shell.bash` で起動する常駐コンテナには Docker / nerdctl とも `--init` を付ける。
+PID 1 や `<defunct>` の調査メモは Hugo 側の Ubuntu 26.04 移行メモに置く。
+
 以前は `su - ユーザー名 -c fish` のような入り方も試したが、TTY 周りで下記のようなエラーが出ることがあった。
 
 ```
@@ -152,31 +155,4 @@ CLI_TOOL_DOCKER_IMAGE=cli-tool-docker ./shell.bash
 この場合、非 root の作業ユーザーから `nerdctl` でホスト containerd を直接操作するには、ホスト側で socket group を設計し直す必要がある。
 日常用途では、まず Docker socket 経由の `docker`/`docker compose` を使う方が単純。
 
-# docker in docker だと osxkeychain が見つからないエラーが出る
-
-docker compose up をした際に次のエラーが出る
-
-```
-error getting credentials - err: exec: "docker-credential-osxkeychain": executable file not found in $PATH, out:
-```
-
-~/.docker/config.json に "credsStore": "osxkeychain" が記載されているので出る。
-mac環境では `brew install docker-credential-helpers` でインストールできるが docker in docker 内では見つからないしバイナリも提供されていない。
-他の選択肢としては下記がある
-- docker-credential-pass（Linux ではこれが一般的）
-- docker-credential-secretservice（GNOME Keyring を利用）
-~/.docker/config.json を修正：
-
-```
-{
-  "credsStore": "pass"
-}
-```
-
-## 認証情報の保存場所
-
-Docker はログイン時 (docker login …) に入力した認証情報を、
-docker-credential-pass というヘルパープログラムを通じて保存します。
-このヘルパーは Linux の pass (Password Store) を利用して、GPG で暗号化された状態で保存します。
-つまり平文ではなく、~/.password-store/ に GPG 鍵で暗号化されて記録される
-docker-credential-pass が呼ばれて取得・削除・一覧を行う
+Docker credential helper など、host 側設定に依存するトラブルシュートは Hugo 側の Ubuntu 26.04 移行メモに置く。

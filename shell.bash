@@ -125,10 +125,10 @@ if [ -z "$CONTAINER_ID" ]; then
         echo "[shell] /etc/containerd が見つかりません。" >&2
     fi
 
-    INIT_OPT=()
-    if [ "${CONTAINER_CMD##* }" = "nerdctl" ]; then
-        INIT_OPT+=(--init)
-    fi
+    # PID 1 が tail のままだと orphaned child を wait(2) しないため、
+    # tmux の status command や Codex/Chawan の短命プロセスが zombie として残る。
+    # Docker / nerdctl とも --init を使い、小さい init に reaping させる。
+    INIT_OPT=(--init)
 
     # Docker socket を bind mount する場合、必要なのは image 内の docker group GID ではなく
     # host 側 /var/run/docker.sock の数値 GID。entrypoint でこの GID の group を作業 user に付ける。
@@ -145,6 +145,7 @@ if [ -z "$CONTAINER_ID" ]; then
   id -g: $(id -g)
   IMAGE_NAME: $IMAGE_NAME
   DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
+  INIT_OPT: ${INIT_OPT[*]}
 EOF
 
     $CONTAINER_CMD \
