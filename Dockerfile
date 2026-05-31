@@ -83,6 +83,7 @@ RUN apt-get update && \
       python3-full \
       python3-pip \
       python3-pynvim \
+      pipx \
       qpdf \
       rbenv \
       resvg \
