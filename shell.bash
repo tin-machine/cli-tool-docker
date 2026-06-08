@@ -6,11 +6,7 @@ wait_for_container() {
     local attempt=0
 
     while [ $attempt -lt $max_attempts ]; do
-        CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}}\t{{.Image}}\t{{.Names}}\t{{.CreatedAt}}" | \
-            grep "$CONTAINER_NAME" | \
-            sort -k4 -r | \
-            head -n 1 | \
-            awk '{print $1}')
+        CONTAINER_ID=$(find_container_id)
         if [ -n "$CONTAINER_ID" ]; then
             # コンテナが実際に応答可能か確認
             if $CONTAINER_CMD exec "$CONTAINER_ID" echo "ready" >/dev/null 2>&1; then
@@ -32,6 +28,18 @@ get_path_gid() {
     else
         stat -L -f '%g' "$path"
     fi
+}
+
+find_container_id() {
+    local scope="${1:-running}"
+    local ps_args=(ps)
+
+    if [ "$scope" = "all" ]; then
+        ps_args=(ps --all)
+    fi
+
+    $CONTAINER_CMD "${ps_args[@]}" --format "{{.ID}}\t{{.Names}}" | \
+        awk -F '\t' -v name="$CONTAINER_NAME" '$2 == name { print $1; exit }'
 }
 
 # コンテナ管理ツールを決定
@@ -78,15 +86,21 @@ if [ "$ARCH" = "Darwin" ]; then
     fi
 fi
 
-# 実行中のコンテナIDを取得（最新のものを選択）
-CONTAINER_ID=$($CONTAINER_CMD ps --format "{{.ID}} {{.Image}} {{.Names}} {{.CreatedAt}}" | \
-    grep "$CONTAINER_NAME" | \
-    sort -k4 -r | \
-    head -n 1 | \
-    awk '{print $1}')
+# 実行中の対象コンテナIDを取得
+CONTAINER_ID=$(find_container_id)
 
 
 if [ -z "$CONTAINER_ID" ]; then
+    STOPPED_CONTAINER_ID=$(find_container_id all)
+
+    if [ -n "$STOPPED_CONTAINER_ID" ]; then
+        echo "[shell] 停止済みコンテナが見つかりました。使い捨てライフサイクルのため削除します..."
+        if ! $CONTAINER_CMD rm "$STOPPED_CONTAINER_ID" >/dev/null; then
+            echo "[shell] Error: 停止済みコンテナの削除に失敗しました: $STOPPED_CONTAINER_ID" >&2
+            exit 1
+        fi
+    fi
+
     echo "[shell] コンテナが見つかりません。新しく起動します..."
 
     # ボリューム設定
@@ -130,6 +144,10 @@ if [ -z "$CONTAINER_ID" ]; then
     # Docker / nerdctl とも --init を使い、小さい init に reaping させる。
     INIT_OPT=(--init)
 
+    # このコンテナは停止後に残さず、次回は新規作成する。
+    # host HOME は bind mount なので、作業成果物はコンテナ削除の対象外。
+    RM_OPT=(--rm)
+
     # Docker socket を bind mount する場合、必要なのは image 内の docker group GID ではなく
     # host 側 /var/run/docker.sock の数値 GID。entrypoint でこの GID の group を作業 user に付ける。
     # login / sshd / su / newgrp などのログイン系プログラムは、ユーザ認証後に glibc の initgroups(3) を呼びます。
@@ -146,6 +164,7 @@ if [ -z "$CONTAINER_ID" ]; then
   IMAGE_NAME: $IMAGE_NAME
   DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
   INIT_OPT: ${INIT_OPT[*]}
+  RM_OPT: ${RM_OPT[*]}
 EOF
 
     $CONTAINER_CMD \
@@ -168,6 +187,7 @@ EOF
         --group-add 20 \
         "${DOCKER_GROUP_OPTS[@]}" \
         "${INIT_OPT[@]}" \
+        "${RM_OPT[@]}" \
         "$IMAGE_NAME:latest"
 
     # コンテナの起動を待機

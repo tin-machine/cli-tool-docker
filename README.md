@@ -139,7 +139,11 @@ docker version
 docker ps
 ```
 
-既に古い設定で起動済みの `cli-tool-docker` コンテナには、entrypoint の group 追加が反映されない。
+`shell.bash` は `docker run --rm` で常駐コンテナを起動する。
+このため `cli-tool-docker` コンテナが停止するとコンテナオブジェクトは自動削除され、次回は新しいコンテナを作成する。
+host の `$HOME` は bind mount なので、作業ファイルはコンテナ削除の対象外。
+
+既に古い設定で実行中の `cli-tool-docker` コンテナには、entrypoint の group 追加や `--init` などの起動設定変更は反映されない。
 また `entrypoint.bash` は image に焼かれるため、この修正を使うには image rebuild か、更新済み image の pull が必要になる。
 ローカルで確認する場合は、`CLI_TOOL_DOCKER_IMAGE` で使う image repository を差し替えられる。
 
@@ -147,8 +151,16 @@ docker ps
 docker build --progress=plain -t cli-tool-docker:latest .
 docker ps --format '{{.ID}} {{.Image}} {{.Names}}' | grep cli-tool-docker
 docker stop <container-id>
-docker rm <container-id>
 CLI_TOOL_DOCKER_IMAGE=cli-tool-docker ./shell.bash
+```
+
+旧設定で停止済みの同名コンテナが残っている場合、`docker ps` では見えないが、`docker run --name cli-tool-docker` は名前衝突で失敗する。
+確認する場合は `docker ps -a --filter name=cli-tool-docker` を使う。
+現在の `shell.bash` は停止済みの `cli-tool-docker` が残っていれば、再利用せず削除してから新規作成する。
+
+```bash
+docker ps -a --filter name=cli-tool-docker
+./shell.bash
 ```
 
 `/run/containerd/containerd.sock` は環境によって `0660 root:root` になっている。
