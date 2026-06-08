@@ -176,6 +176,31 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_darwin_amd64",
+      "checksum": "B4BA1ECCE3C47F00803F4F964DE38394326C7A32EB6540616E04FB2935A0F08D",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_darwin_arm64",
+      "checksum": "877DE31753A4DD2401AA048937AA9A7FC4D5F6CE858CF31508C5802954297213",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_linux_amd64",
+      "checksum": "FA52A4E758C63D38299163FBDD1EDFB4C4963247918BF9C1C5D31D84789EDED4",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_linux_arm64",
+      "checksum": "578648E463A11C1B6DB6010CBF41EAFED6BEE79466FCFFA1BB446672CF7945EA",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_windows_amd64.exe",
+      "checksum": "E279BC506A452EEAFCDF364F91A025455E402A8001169083CAF01F4B64A544E2",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/raviqqe/muffet/v2.11.4/muffet_darwin_amd64.tar.gz",
       "checksum": "FB4B18E55E1E9E5289E372B0B59413B350EE6717F548ECED339479E27A5AB41C",
       "algorithm": "sha256"

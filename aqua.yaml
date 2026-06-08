@@ -20,6 +20,7 @@ packages:
   - name: helm/helm@v3.17.3  # helm: Kubernetes パッケージマネージャ
   - name: kayac/ecspresso@v2.8.4
   - name: kubernetes/kubectl@v1.32.3  # kubectl: Kubernetes CLI
+  - name: mikefarah/yq@v4.53.3  # yq: YAML processor
   - name: raviqqe/muffet@v2.11.4  # link checker: website crawler
   - name: sharkdp/bat@v0.25.0  # bat: catの強化版（シンタックスハイライト付き）
   - name: suzuki-shunsuke/pinact@v3.3.0
