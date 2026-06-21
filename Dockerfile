@@ -374,6 +374,48 @@ RUN set -eux; \
     install -Dm0755 /tmp/fff-mcp /usr/local/bin/fff-mcp; \
     rm -f /tmp/fff-mcp
 
+# DevRag (Markdown RAG MCP server)
+ARG DEVRAG_VERSION=v1.4.4
+ARG ONNXRUNTIME_VERSION=1.22.0
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) \
+        DEVRAG_ARCH=linux-x64; \
+        DEVRAG_SHA256=6e852e619fcb89b064396ee2a32a3fe9173a699a8d92a68723c1124aeadc2bc8; \
+        ONNXRUNTIME_ARCH=linux-x64; \
+        ONNXRUNTIME_SHA256=8344d55f93d5bc5021ce342db50f62079daf39aaafb5d311a451846228be49b3 ;; \
+      arm64) \
+        DEVRAG_ARCH=linux-arm64; \
+        DEVRAG_SHA256=068cf0ff6cceb2091c6ad1e590d14194b290f09d74e131458a668840927cf5b5; \
+        ONNXRUNTIME_ARCH=linux-aarch64; \
+        ONNXRUNTIME_SHA256=bb76395092d150b52c7092dc6b8f2fe4d80f0f3bf0416d2f269193e347e24702 ;; \
+      *) \
+        echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    DEVRAG_TARBALL="/tmp/devrag-${DEVRAG_ARCH}.tar.gz"; \
+    ONNXRUNTIME_TARBALL="/tmp/onnxruntime-${ONNXRUNTIME_ARCH}.tgz"; \
+    curl -fsSL -o "${DEVRAG_TARBALL}" "https://github.com/tomohiro-owada/devrag/releases/download/${DEVRAG_VERSION}/devrag-${DEVRAG_ARCH}.tar.gz"; \
+    echo "${DEVRAG_SHA256}  ${DEVRAG_TARBALL}" | sha256sum -c -; \
+    install -d "/opt/devrag/${DEVRAG_VERSION}"; \
+    tar -xzf "${DEVRAG_TARBALL}" -C "/opt/devrag/${DEVRAG_VERSION}"; \
+    test -x "/opt/devrag/${DEVRAG_VERSION}/devrag-${DEVRAG_ARCH}"; \
+    curl -fsSL -o "${ONNXRUNTIME_TARBALL}" "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}.tgz"; \
+    echo "${ONNXRUNTIME_SHA256}  ${ONNXRUNTIME_TARBALL}" | sha256sum -c -; \
+    install -d /opt/onnxruntime; \
+    tar -xzf "${ONNXRUNTIME_TARBALL}" -C /opt/onnxruntime; \
+    ln -sf "/opt/onnxruntime/onnxruntime-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}/lib/libonnxruntime.so" "/opt/onnxruntime/onnxruntime-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}/lib/onnxruntime.so"; \
+    chown -R root:root "/opt/devrag/${DEVRAG_VERSION}" "/opt/onnxruntime/onnxruntime-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}"; \
+    printf '%s\n' \
+      '#!/bin/bash' \
+      'set -euo pipefail' \
+      'export DEVRAG_THREADS="${DEVRAG_THREADS:-8}"' \
+      "export LD_LIBRARY_PATH=\"/opt/onnxruntime/onnxruntime-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}/lib\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}\"" \
+      "exec \"/opt/devrag/${DEVRAG_VERSION}/devrag-${DEVRAG_ARCH}\" \"\$@\"" \
+      > /usr/local/bin/devrag; \
+    chmod 0755 /usr/local/bin/devrag; \
+    rm -f "${DEVRAG_TARBALL}" "${ONNXRUNTIME_TARBALL}"; \
+    devrag --version
+
 # leaf (markdown previewer)
 ARG LEAF_VERSION=1.24.2
 RUN set -eux; \
