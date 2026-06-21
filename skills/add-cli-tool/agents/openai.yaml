@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add CLI Tool"
+  short_description: "Add tools to cli-tool-docker safely"
+  default_prompt: "Use $add-cli-tool to add a new command line tool to cli-tool-docker."

@@ -354,6 +354,44 @@ RUN set -eux; \
     rm -rf "$LYCHEE_TARBALL" "/tmp/lychee-${LYCHEE_ARCH}"; \
     lychee --version
 
+# fff-mcp (AI file-search MCP server)
+ARG FFF_MCP_VERSION=v0.9.5
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) \
+        FFF_MCP_ARCH=x86_64-unknown-linux-musl; \
+        FFF_MCP_SHA256=8e1b0dfbb3b5b05d57b086c3b75c838d283b489b4cadb8636c6b044f29bbe407 ;; \
+      arm64) \
+        FFF_MCP_ARCH=aarch64-unknown-linux-musl; \
+        FFF_MCP_SHA256=67b6a26e24c87ace2cc585ee340c835069fa606e0b36fa87ae066e818ad3bac2 ;; \
+      *) \
+        echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    URL="https://github.com/dmtrKovalenko/fff.nvim/releases/download/${FFF_MCP_VERSION}/fff-mcp-${FFF_MCP_ARCH}"; \
+    curl -fsSL -o /tmp/fff-mcp "${URL}"; \
+    echo "${FFF_MCP_SHA256}  /tmp/fff-mcp" | sha256sum -c -; \
+    install -Dm0755 /tmp/fff-mcp /usr/local/bin/fff-mcp; \
+    rm -f /tmp/fff-mcp
+
+# leaf (markdown previewer)
+ARG LEAF_VERSION=1.24.2
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) \
+        LEAF_ARCH=x86_64 \
+        LEAF_SHA256=b985eefcfd0c4b74d72c0c5d7b9ffa4aec045022b49f09636c2388b57c0ce183 ;; \
+      arm64) \
+        LEAF_ARCH=arm64 \
+        LEAF_SHA256=b2326c0e968b2bc8ce705b555966582c70d41343d4661479e9affa210f2e8641 ;; \
+      *) \
+        echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    URL="https://github.com/RivoLink/leaf/releases/download/${LEAF_VERSION}/leaf-linux-${LEAF_ARCH}"; \
+    curl -fsSL -o /tmp/leaf "${URL}"; \
+    echo "${LEAF_SHA256}  /tmp/leaf" | sha256sum -c -; \
+    install -Dm0755 /tmp/leaf /usr/local/bin/leaf; \
+    rm -f /tmp/leaf
+
 # Chawan TUI browser
 ARG CHAWAN_VERSION=0.4.0
 ARG CHAWAN_DEB_SHA256=858eb1fb02897a24af4e1d20a17a82692dad100b09ef0064f5f9199e3647dda1
