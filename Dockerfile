@@ -317,6 +317,7 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
       @openai/codex \
       clawdbot \
       jsonlint \
+      opencode-ai \
       markdownlint-cli && \
     rm -rf /root/.npm /root/.cache/node-gyp
 
