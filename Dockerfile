@@ -287,7 +287,7 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
-    PATH="/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH="/usr/local/bin:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # gcc-11 参照を回避（必要要件に合わせて）
 RUN ln -sf "$(command -v gcc)" /usr/bin/gcc-11
@@ -303,7 +303,15 @@ WORKDIR /usr/local/etc
 RUN curl -sSfL -o /tmp/aqua.tar.gz "https://github.com/aquaproj/aqua/releases/download/${AQUA_VERSION}/aqua_linux_${TARGETARCH}.tar.gz" && \
     tar -xzf /tmp/aqua.tar.gz -C /usr/local/bin aqua && \
     rm /tmp/aqua.tar.gz && \
-    aqua install
+    aqua install && \
+    uv_bin="$(aqua which uv)" && \
+    uvx_bin="$(aqua which uvx)" && \
+    test -x "${uv_bin}" && \
+    test -x "${uvx_bin}" && \
+    ln -sf "${uv_bin}" /usr/local/bin/uv && \
+    ln -sf "${uvx_bin}" /usr/local/bin/uvx && \
+    /usr/local/bin/uv --version && \
+    /usr/local/bin/uvx --version
 # 以降で作業ディレクトリに依存しないなら戻しておくと親切
 WORKDIR /
 

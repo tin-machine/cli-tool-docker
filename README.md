@@ -79,6 +79,11 @@ aqua update-checksum -prune
 aquaproj の Renovate preset は `aqua.yaml` の version 更新を検出するが、`aqua-checksums.json` の再生成までは行わない。
 Renovate が aqua package 更新 PR を作った場合は、checksum 更新を手元で足すか、別途 CI 化する必要がある。
 
+`uv` / `uvx` は `aqua.yaml` で管理するが、Codex や MCP client のように shell を介さず
+`execve(2)` で起動する用途では aqua proxy が解決に失敗することがある。このため
+Dockerfile では `aqua install` 後に `aqua which uv` / `aqua which uvx` の実体へ向けた
+symlink を `/usr/local/bin` に置き、`/usr/local/bin` を `/usr/local/aqua/bin` より先にしている。
+
 ## Terraform / OpenTofu / Terragrunt
 
 Terraform 系のバージョン管理は `aqua.yaml` の `tofuutils/tenv` で行う。
