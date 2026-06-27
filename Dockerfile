@@ -385,6 +385,7 @@ RUN set -eux; \
 # DevRag (Markdown RAG MCP server)
 ARG DEVRAG_VERSION=v1.4.4
 ARG ONNXRUNTIME_VERSION=1.22.0
+# hadolint ignore=SC2016
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) \
