@@ -310,6 +310,8 @@ RUN curl -sSfL -o /tmp/aqua.tar.gz "https://github.com/aquaproj/aqua/releases/do
     test -x "${uvx_bin}" && \
     ln -sf "${uv_bin}" /usr/local/bin/uv && \
     ln -sf "${uvx_bin}" /usr/local/bin/uvx && \
+    test "$(command -v uv)" = /usr/local/bin/uv && \
+    test "$(command -v uvx)" = /usr/local/bin/uvx && \
     /usr/local/bin/uv --version && \
     /usr/local/bin/uvx --version
 # 以降で作業ディレクトリに依存しないなら戻しておくと親切
@@ -518,6 +520,12 @@ RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
 COPY --from=artifacts / /
+RUN test "$(command -v uv)" = /usr/local/bin/uv && \
+    test "$(command -v uvx)" = /usr/local/bin/uvx && \
+    test -x /usr/local/bin/uv && \
+    test -x /usr/local/bin/uvx && \
+    /usr/local/bin/uv --version && \
+    /usr/local/bin/uvx --version
 ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # デフォルトのコマンド
