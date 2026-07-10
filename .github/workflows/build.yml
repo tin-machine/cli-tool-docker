@@ -1,181 +1,46 @@
 ---
-name: Build and Push Multi-Platform Docker Image
+name: Repair stale Node CLI package
 
 'on':
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: repair-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint YAML & Shell
+  replace-clawdbot:
+    if: github.head_ref == 'feat/add-pi-coding-agent'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Run yamllint
-        uses: ibiqlik/action-yamllint@v3
-      - name: Run shellcheck on shell scripts
-        uses: azohra/shell-linter@v0.6.0
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
         with:
-          files: entrypoint.bash shell.bash
-
-  pi-install-diagnostic:
-    name: Diagnose Pi Install
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Reproduce the Node CLI install layer
+          ref: ${{ github.head_ref }}
+      - name: Replace retired package name
         shell: bash
         run: |
-          cat > /tmp/Dockerfile.pi-diagnostic <<'DOCKERFILE'
-          FROM ubuntu:26.04
-          SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
-          ARG PI_CODING_AGENT_VERSION=0.80.6
-          ENV DEBIAN_FRONTEND=noninteractive \
-              VOLTA_HOME=/opt/volta \
-              PATH="/opt/volta/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-          RUN apt-get update && \
-              apt-get install -y --no-install-recommends ca-certificates curl && \
-              rm -rf /var/lib/apt/lists/*
-          RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
-              mkdir -p "$VOLTA_HOME" && \
-              volta install node@v24.2.0 && \
-              volta install \
-                @anthropic-ai/claude-code \
-                @google/gemini-cli \
-                @openai/codex \
-                clawdbot \
-                jsonlint \
-                opencode-ai \
-                markdownlint-cli && \
-              npm_config_ignore_scripts=true volta install \
-                "@earendil-works/pi-coding-agent@${PI_CODING_AGENT_VERSION}" && \
-              command -v pi && \
-              pi --version
-          DOCKERFILE
-          set +e
-          docker build --progress=plain \
-            -f /tmp/Dockerfile.pi-diagnostic \
-            -t pi-install-diagnostic /tmp \
-            > /tmp/pi-install-diagnostic.log 2>&1
-          rc=$?
-          tail -n 30 /tmp/pi-install-diagnostic.log
-          exit "$rc"
+          python3 - <<'PY'
+          from pathlib import Path
 
-  build-and-push:
-    needs:
-      - lint
-      - pi-install-diagnostic
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Build and Push Docker Image
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     push: true
-      #     platforms: linux/amd64
-      #     tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
-
-      # PRの場合のタグ
-      - name: Build and Push Docker Image (for PR)
-        if: github.event_name == 'pull_request'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
-
-      # mainブランチへのpushの場合のタグ
-      - name: Build and Push Docker Image (for main branch)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
-
-      - name: Send Slack Notification
-        if: always()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          channel-id: 'C075AE23M9P'
-          payload: |
-            {
-              "text": "ビルド結果: ${{ job.status }} / ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "ビルド結果: ${{ job.status }}\n`${{ github.repository }}` / `${{ github.ref_name }}`"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    { "type": "mrkdwn", "text": "*リポジトリ:*\n`${{ github.repository }}`" },
-                    { "type": "mrkdwn", "text": "*ブランチ:*\n`${{ github.ref_name }}`" },
-                    { "type": "mrkdwn", "text": "*実行者:*\n`${{ github.actor }}`" }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "ワークフロー実行結果を見る" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  # リリースノート作成（mainブランチ push 時）
-  release-draft:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    steps:
-      - name: Draft release notes
-        uses: release-drafter/release-drafter@v5
-        with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path = Path("Dockerfile")
+          content = path.read_text()
+          old = "      clawdbot \\\n"
+          new = "      openclaw \\\n"
+          if old not in content:
+              print("clawdbot entry already absent")
+              raise SystemExit(0)
+          path.write_text(content.replace(old, new, 1))
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add Dockerfile
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Replace stale clawdbot package'
+          git push origin HEAD:${{ github.head_ref }}
