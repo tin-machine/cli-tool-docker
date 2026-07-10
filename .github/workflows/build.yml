@@ -1,14 +1,10 @@
 ---
-name: Pin stable tmux release
+name: Repair tmux build pin
 
 'on':
   pull_request:
     branches:
       - main
-
-concurrency:
-  group: repair-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   pin-tmux:
@@ -24,33 +20,14 @@ jobs:
       - name: Pin tmux 3.7b
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("Dockerfile")
-          content = path.read_text()
-          old = '''FROM build AS tmux-build
-          WORKDIR /build/tmux
-          RUN git clone https://github.com/tmux/tmux.git . && \\
-              git fetch origin && \\
-              sh autogen.sh && \\
-'''
-          new = '''FROM build AS tmux-build
-          ARG TMUX_VERSION=3.7b
-          WORKDIR /build/tmux
-          RUN git clone --depth 1 --branch "${TMUX_VERSION}" https://github.com/tmux/tmux.git . && \\
-              sh autogen.sh && \\
-'''
-          if old not in content:
-              print("expected tmux block not found or already updated")
-              raise SystemExit(0)
-          path.write_text(content.replace(old, new, 1))
-          PY
+          python3 -c 'from pathlib import Path; p=Path("Dockerfile"); s=p.read_text(); s=s.replace("FROM build AS tmux-build\nWORKDIR /build/tmux\n", "FROM build AS tmux-build\nARG TMUX_VERSION=3.7b\nWORKDIR /build/tmux\n", 1); s=s.replace("RUN git clone https://github.com/tmux/tmux.git . && \\\n", "RUN git clone --depth 1 --branch \"${TMUX_VERSION}\" https://github.com/tmux/tmux.git . && \\\n", 1); p.write_text(s)'
+          git diff -- Dockerfile
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add Dockerfile
           if git diff --cached --quiet; then
-            exit 0
+            echo 'tmux block already pinned or not found'
+            exit 1
           fi
           git commit -m 'Pin tmux build to 3.7b'
           git push origin HEAD:${{ github.head_ref }}
