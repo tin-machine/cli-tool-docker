@@ -26,8 +26,28 @@ jobs:
         with:
           files: entrypoint.bash shell.bash
 
-  build-and-push:
+  pi-install-diagnostic:
+    name: Diagnose Pi Install
     needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build minimal Volta and Pi image
+        shell: bash
+        run: |
+          set +e
+          docker build --progress=plain \
+            -f Dockerfile.pi-diagnostic \
+            -t pi-install-diagnostic . \
+            > /tmp/pi-install-diagnostic.log 2>&1
+          rc=$?
+          tail -n 200 /tmp/pi-install-diagnostic.log
+          exit "$rc"
+
+  build-and-push:
+    needs:
+      - lint
+      - pi-install-diagnostic
     runs-on: ubuntu-latest
 
     permissions:
