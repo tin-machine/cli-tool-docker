@@ -14,7 +14,7 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Build tools stage and print errors only
+      - name: Build final stage and print errors only
         shell: bash
         run: |
           git clone -q --depth 1 --branch feat/add-pi-coding-agent \
@@ -25,7 +25,7 @@ jobs:
           docker buildx build \
             --progress=plain \
             --platform linux/amd64 \
-            --target tools \
+            --target final \
             --cache-from type=gha \
             . > /tmp/full-build.log 2>&1
           rc=$?
