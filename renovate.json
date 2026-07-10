@@ -9,8 +9,9 @@
     "at 7pm on monday,wednesday,friday"
   ],
   "timezone": "Asia/Tokyo",
-  "minimumReleaseAge": "7 days",
+  "minimumReleaseAge": "14 days",
   "internalChecksFilter": "strict",
+  "prCreation": "not-pending",
   "postUpgradeTasks": {
     "commands": [
       "bash .github/scripts/update-aqua-checksum.bash"

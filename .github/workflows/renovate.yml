@@ -3,7 +3,7 @@ name: Renovate
 
 'on':
   schedule:
-    - cron: '0 3 * * *'  # 毎日午前3時に実行
+    - cron: '0 10 * * 1,3,5'  # 月水金 19:00 JST に実行
   workflow_dispatch:  # 手動実行も可能
 
 jobs:

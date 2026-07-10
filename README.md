@@ -66,8 +66,9 @@ Use $add-cli-tool to add <tool-name> to cli-tool-docker.
 ## Renovate / aqua
 
 Renovate は `renovate.json` で GitHub Actions の digest pin と aqua package 更新を扱う。
-release timestamp が取れる version update は `minimumReleaseAge: 7 days` の対象なので、新しい release が出ても 7 日経ってから PR が来る。
+release timestamp が取れる version update は `minimumReleaseAge: 14 days` の対象なので、新しい release が出ても 14 日経ってから PR が来る。
 GitHub Actions の初回 pin や digest 更新は、Renovate の update type 上 `minimumReleaseAge` の対象外になる場合がある。
+Renovate は `.github/workflows/renovate.yml` の scheduled workflow で self-hosted 実行し、対象 repository は `.github/renovate-global.json` の `repositories` で明示する。
 
 `aqua.yaml` は checksum 必須にしている。
 aqua 管理 package を追加・更新した時は、次で `aqua-checksums.json` も更新する。
@@ -77,7 +78,8 @@ aqua update-checksum -prune
 ```
 
 aquaproj の Renovate preset は `aqua.yaml` の version 更新を検出するが、`aqua-checksums.json` の再生成までは行わない。
-Renovate が aqua package 更新 PR を作った場合は、checksum 更新を手元で足すか、別途 CI 化する必要がある。
+この repository では Renovate の `postUpgradeTasks` で `.github/scripts/update-aqua-checksum.bash` を実行し、Renovate PR では checksum も同じ branch に更新する。
+手元で `aqua.yaml` を変更した場合は、commit 前に `aqua update-checksum -prune` を実行して `aqua-checksums.json` を揃える。
 
 `uv` / `uvx` は `aqua.yaml` で管理するが、Codex や MCP client のように shell を介さず
 `execve(2)` で起動する用途では aqua proxy が解決に失敗することがある。このため

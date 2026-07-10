@@ -1,5 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-global-schema.json",
+  "repositories": [
+    "tin-machine/cli-tool-docker"
+  ],
   "allowedCommands": [
     "^bash \\.github/scripts/update-aqua-checksum\\.bash$"
   ]
