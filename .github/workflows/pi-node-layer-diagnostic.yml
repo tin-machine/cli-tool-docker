@@ -12,22 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: write
+      actions: read
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build with concise failure log
+      - name: Build tools stage and print errors only
         shell: bash
         run: |
+          git clone -q --depth 1 --branch feat/add-pi-coding-agent \
+            https://github.com/tin-machine/cli-tool-docker.git /tmp/cli-tool-docker
+          cd /tmp/cli-tool-docker
+          docker buildx create --use >/dev/null
           set +e
           docker buildx build \
             --progress=plain \
             --platform linux/amd64 \
+            --target tools \
             --cache-from type=gha \
-            --cache-to type=gha,mode=min \
             . > /tmp/full-build.log 2>&1
           rc=$?
-          tail -n 80 /tmp/full-build.log
+          grep -E -i -B 3 -A 5 \
+            'error|failed|could not|not found|no space|checksum|did not complete' \
+            /tmp/full-build.log | tail -n 35 || true
           exit "$rc"
