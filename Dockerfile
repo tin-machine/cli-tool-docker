@@ -281,6 +281,7 @@ RUN set -eux; \
 FROM base AS tools
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 ARG TARGETARCH
+ARG PI_CODING_AGENT_VERSION=0.80.6
 
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_VERSION=v2.48.2 \
@@ -329,6 +330,9 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
       jsonlint \
       opencode-ai \
       markdownlint-cli && \
+    npm_config_ignore_scripts=true volta install \
+      "@earendil-works/pi-coding-agent@${PI_CODING_AGENT_VERSION}" && \
+    pi --version && \
     rm -rf /root/.npm /root/.cache/node-gyp
 
 # sops
