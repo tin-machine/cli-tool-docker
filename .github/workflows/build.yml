@@ -66,7 +66,7 @@ jobs:
             -t pi-install-diagnostic /tmp \
             > /tmp/pi-install-diagnostic.log 2>&1
           rc=$?
-          tail -n 60 /tmp/pi-install-diagnostic.log
+          tail -n 20 /tmp/pi-install-diagnostic.log
           exit "$rc"
 
   build-and-push:
