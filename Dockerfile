@@ -326,7 +326,7 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
       @openai/codex \
-      clawdbot \
+      openclaw \
       jsonlint \
       opencode-ai \
       markdownlint-cli && \
