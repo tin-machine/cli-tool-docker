@@ -17,6 +17,7 @@ RUN apt-get update && \
       language-pack-ja language-pack-ja-base locales tzdata && \
     locale-gen ja_JP.UTF-8 && \
     apt-get -y --no-install-recommends install \
+      age \
       ansible \
       ansible-lint \
       bat \
@@ -525,7 +526,9 @@ RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
 COPY --from=artifacts / /
-RUN test "$(command -v uv)" = /usr/local/bin/uv && \
+RUN command -v age >/dev/null && \
+    command -v age-keygen >/dev/null && \
+    test "$(command -v uv)" = /usr/local/bin/uv && \
     test "$(command -v uvx)" = /usr/local/bin/uvx && \
     test -x /usr/local/bin/uv && \
     test -x /usr/local/bin/uvx && \
