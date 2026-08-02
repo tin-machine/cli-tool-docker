@@ -109,6 +109,8 @@ if [ -z "$CONTAINER_ID" ]; then
     VOLUME_OPTS=()
     DOCKER_GROUP_OPTS=()
     DOCKER_SOCK_GID=""
+    DRI_GROUP_OPTS=()
+    DRI_RENDER_GID=""
     if [ -S /var/run/docker.sock ]; then
         VOLUME_OPTS+=(--volume /var/run/docker.sock:/var/run/docker.sock)
         DOCKER_SOCK_GID="$(get_path_gid /var/run/docker.sock)"
@@ -119,6 +121,20 @@ if [ -z "$CONTAINER_ID" ]; then
         fi
     else
         echo "[shell] ⚠️ /var/run/docker.sock が見つかりません。docker は使えないかもしれません。" >&2
+    fi
+
+    # WebGPU/Vulkan などで使う render node は通常 0660 root:<render gid>。
+    # --privileged により device はコンテナから見えるが、作業ユーザーには host 側の
+    # 数値 GID を supplementary group として引き継ぐ必要がある。
+    if [ -c /dev/dri/renderD128 ]; then
+        DRI_RENDER_GID="$(get_path_gid /dev/dri/renderD128)"
+        if [ -n "$DRI_RENDER_GID" ]; then
+            DRI_GROUP_OPTS+=(--group-add "${DRI_RENDER_GID}")
+        else
+            echo "[shell] ⚠️ /dev/dri/renderD128 の GID を取得できませんでした。GPU は権限不足になるかもしれません。" >&2
+        fi
+    else
+        echo "[shell] /dev/dri/renderD128 が見つかりません。GPU render node は引き継ぎません。" >&2
     fi
 
     if [ -S /run/containerd/containerd.sock ]; then
@@ -163,6 +179,7 @@ if [ -z "$CONTAINER_ID" ]; then
   id -g: $(id -g)
   IMAGE_NAME: $IMAGE_NAME
   DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
+  DRI_RENDER_GID: ${DRI_RENDER_GID}
   INIT_OPT: ${INIT_OPT[*]}
   RM_OPT: ${RM_OPT[*]}
 EOF
@@ -182,10 +199,12 @@ EOF
         --env GID="$(id -g)" \
         --env USER="$(whoami)" \
         --env DOCKER_SOCK_GID="${DOCKER_SOCK_GID}" \
+        --env DRI_RENDER_GID="${DRI_RENDER_GID}" \
         -w "${HOME}" \
         --privileged \
         --group-add 20 \
         "${DOCKER_GROUP_OPTS[@]}" \
+        "${DRI_GROUP_OPTS[@]}" \
         "${INIT_OPT[@]}" \
         "${RM_OPT[@]}" \
         "$IMAGE_NAME:latest"

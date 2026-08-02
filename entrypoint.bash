@@ -8,6 +8,7 @@ USER_NAME="${USER_NAME:-${USER:-customuser}}"
 HOME_DIR="$HOME"
 GROUP_NAME="$USER_NAME"
 DOCKER_SOCK_GID="${DOCKER_SOCK_GID:-}"
+DRI_RENDER_GID="${DRI_RENDER_GID:-}"
 
 # ロケール設定（デフォルトは ja_JP.UTF-8、環境変数があればそれを使用）
 LOCALE_LANG="${LANG:-ja_JP.UTF-8}"
@@ -40,6 +41,7 @@ cat <<EOF
   HOME_DIR: $HOME_DIR
   GROUP_NAME: $GROUP_NAME
   DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
+  DRI_RENDER_GID: ${DRI_RENDER_GID}
   LOCALE_LANG: $LOCALE_LANG
   LOCALE_LANGUAGE: $LOCALE_LANGUAGE
   LOCALE_LC_ALL: $LOCALE_LC_ALL
@@ -124,6 +126,7 @@ if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
         fi
 
         add_user_to_gid_group "$DOCKER_SOCK_GID" docker-host
+        add_user_to_gid_group "$DRI_RENDER_GID" render-host
     else
         echo "[entrypoint] WARN: ${USER_NAME} ユーザーが存在しないため、dialout 追加をスキップします" >&2
     fi

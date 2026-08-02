@@ -174,6 +174,24 @@ docker version
 docker ps
 ```
 
+# コンテナ内から GPU render node を使う
+
+`/dev/dri/renderD128` がある host では、`shell.bash` がその数値 GID を
+`DRI_RENDER_GID` として渡す。`entrypoint.bash` は対応する group をコンテナ内に
+作成して作業ユーザーへ追加するため、`setpriv --init-groups` 後も render node へ
+アクセスできる。コンテナは `--privileged` で起動するため、追加の `--device` 指定は不要である。
+
+host とコンテナ内で次を確認する。
+
+```bash
+stat -Lc '%n %a %u %g %U %G %F' /dev/dri/renderD128
+id -a
+test -rw /dev/dri/renderD128 && echo 'render node accessible'
+```
+
+`renderD128` がない host では GPU 用の group は追加されない。この変更は WebGPU/Vulkan
+利用の前提となる Unix 権限を整えるだけで、利用するアプリケーションの GPU backend を有効化するものではない。
+
 `shell.bash` は `docker run --rm` で常駐コンテナを起動する。
 このため `cli-tool-docker` コンテナが停止するとコンテナオブジェクトは自動削除され、次回は新しいコンテナを作成する。
 host の `$HOME` は bind mount なので、作業ファイルはコンテナ削除の対象外。
