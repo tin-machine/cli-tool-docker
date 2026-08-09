@@ -150,7 +150,7 @@ FROM build AS neovim-build
 WORKDIR /build/neovim
 RUN git clone https://github.com/neovim/neovim.git . && \
     git fetch origin && \
-    git checkout release-0.11 && \
+    git checkout release-0.12 && \
     make -j"$(nproc)" VERBOSE=1 CMAKE_BUILD_TYPE=Release \
       CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/opt/neovim" && \
     make install
@@ -325,13 +325,15 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
     mkdir -p "$VOLTA_HOME" && \
     volta install node@v24.2.0 && \
     volta install \
+      tree-sitter-cli \
       @anthropic-ai/claude-code \
       @google/gemini-cli \
       @openai/codex \
       openclaw \
       jsonlint \
       opencode-ai \
-      markdownlint-cli && \
+      markdownlint-cli \
+      mcp-local-rag && \
     npm_config_ignore_scripts=true volta install \
       "@earendil-works/pi-coding-agent@${PI_CODING_AGENT_VERSION}" && \
     pi --version && \
