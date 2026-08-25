@@ -221,7 +221,7 @@ TERMINAL="${TERM:-screen-256color-bce}"
 # exec --user uid:gid で入ると supplementary groups が初期化されない
 # root で exec → su / setpriv --init-groups で降りると、initgroups(3) が走って解決
 $CONTAINER_CMD exec -it \
-  --env TERM="${TERMINAL}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" \
+  --env TERM="${TERMINAL}" --env TERM_PROGRAM="${TERM_PROGRAM}" --env TERM_PROGRAM_VERSION="${TERM_PROGRAM_VERSION}" --env LC_ALL="${LOCALE_LC_ALL}" --env TZ="${TIMEZONE}" \
   --user 0:0 \
   "$CONTAINER_ID" bash -lc \
   'exec setpriv --reuid='"$(id -u)"' --regid='"$(id -g)"' --init-groups '"$SHELL_CMD"' "$@"' bash "$@"
