@@ -528,6 +528,7 @@ RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
 COPY --from=artifacts / /
+# Final image smoke checks for sandbox and managed tool entrypoints.
 RUN command -v age >/dev/null && \
     command -v age-keygen >/dev/null && \
     test "$(command -v uv)" = /usr/local/bin/uv && \
