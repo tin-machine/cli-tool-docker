@@ -283,7 +283,7 @@ RUN set -eux; \
 FROM base AS tools
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 ARG TARGETARCH
-ARG PI_CODING_AGENT_VERSION=0.80.6
+ARG PI_CODING_AGENT_VERSION=1.3.0
 
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
     AQUA_VERSION=v2.48.2 \
