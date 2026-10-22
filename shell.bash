@@ -197,6 +197,8 @@ EOF
         --env HOME="${HOME}" \
         --env UID="$(id -u)" \
         --env GID="$(id -g)" \
+        --env CLI_USER_ID="$(id -u)" \
+        --env CLI_GROUP_ID="$(id -g)" \
         --env USER="$(whoami)" \
         --env DOCKER_SOCK_GID="${DOCKER_SOCK_GID}" \
         --env DRI_RENDER_GID="${DRI_RENDER_GID}" \
