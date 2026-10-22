@@ -2,11 +2,16 @@
 
 echo '[entrypoint] 開始'
 # デフォルトのUIDとGID（環境変数が無ければ id から取得）
-USER_ID="${UID:-$(id -u)}"
-GROUP_ID="${GID:-$(id -g)}"
+USER_ID="${CLI_USER_ID:-${UID:-$(id -u)}}"
+GROUP_ID="${CLI_GROUP_ID:-${GID:-$(id -g)}}"
 USER_NAME="${USER_NAME:-${USER:-customuser}}"
 HOME_DIR="$HOME"
 GROUP_NAME="$USER_NAME"
+WORKSPACE_MODE="${CLI_WORKSPACE_MODE:-0}"
+if [ "$WORKSPACE_MODE" != 0 ] && [ "$WORKSPACE_MODE" != 1 ]; then
+    echo '[entrypoint] CLI_WORKSPACE_MODEは0または1にしてください' >&2
+    exit 2
+fi
 DOCKER_SOCK_GID="${DOCKER_SOCK_GID:-}"
 DRI_RENDER_GID="${DRI_RENDER_GID:-}"
 
@@ -30,6 +35,16 @@ export TZ="$TIMEZONE"
 CAN_MANAGE_ACCOUNTS=1
 if [ "$(id -u)" -ne 0 ] || [ ! -w /etc/passwd ] || [ ! -w /etc/group ]; then
     CAN_MANAGE_ACCOUNTS=0
+fi
+if [ "$WORKSPACE_MODE" = 1 ]; then
+    if [[ ! "$USER_ID" =~ ^[1-9][0-9]*$ ]] || [[ ! "$GROUP_ID" =~ ^[1-9][0-9]*$ ]] || [ "$CAN_MANAGE_ACCOUNTS" -ne 1 ]; then
+        echo '[entrypoint] workspaceにはroot以外の数値UID/GIDとaccount管理権限が必要です' >&2
+        exit 2
+    fi
+    if [ "${CODEX_HOME:-}" != /work-state/codex ]; then
+        echo '[entrypoint] workspaceのCODEX_HOMEは/work-state/codexに固定してください' >&2
+        exit 2
+    fi
 fi
 
 # shell.bashから起動した場合、下記の情報はsudo nerdctl logs -f <コンテナID> で確認可能
@@ -146,8 +161,29 @@ maybe_chown() {
 }
 
 if [ "$CAN_MANAGE_ACCOUNTS" -eq 1 ]; then
-    maybe_chown /usr/local/aqua/
-    maybe_chown /usr/local/lib/node_modules/
+    if [ "$WORKSPACE_MODE" != 1 ]; then
+        maybe_chown /usr/local/aqua/
+        maybe_chown /usr/local/lib/node_modules/
+    fi
+fi
+
+if [ "$WORKSPACE_MODE" = 1 ]; then
+    if ! id "$USER_NAME" >/dev/null 2>&1 \
+        || [ "$(id -u "$USER_NAME")" != "$USER_ID" ] \
+        || [ "$(id -g "$USER_NAME")" != "$GROUP_ID" ] \
+        || [ "$(getent passwd "$USER_NAME" | cut -d: -f6)" != "$HOME_DIR" ] \
+        || [ ! -d "$HOME_DIR" ]; then
+        echo '[entrypoint] workspaceのuser/group/homeが要求値と一致しません' >&2
+        exit 2
+    fi
+    if ! install -d -m 0700 -o "$USER_ID" -g "$GROUP_ID" -- "$CODEX_HOME"; then
+        echo '[entrypoint] CODEX_HOMEを初期化できません' >&2
+        exit 2
+    fi
+    if ! gosu "$USER_NAME" test -w "$HOME_DIR" || ! gosu "$USER_NAME" test -w "$CODEX_HOME"; then
+        echo '[entrypoint] workspaceのhomeまたはCODEX_HOMEに書き込めません' >&2
+        exit 2
+    fi
 fi
 
 # 指定したユーザーとしてコマンドを実行
