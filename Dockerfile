@@ -541,3 +541,24 @@ ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # デフォルトのコマンド
 CMD ["tail", "-F", "/dev/null"]
+
+# k3s の native snapshotter は各 layer を展開時に複製する。
+# ARM64 workspace 用だけ最終 filesystem を単一 layer にして、容量を抑える。
+# runtime 設定は final と base/tools の ENV に合わせて維持する。
+FROM scratch AS workspace-flat
+COPY --from=final / /
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=ja_JP.UTF-8 \
+    LC_ALL=ja_JP.UTF-8 \
+    TZ=Asia/Tokyo \
+    CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
+    AQUA_VERSION=v2.48.2 \
+    AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
+    AQUA_ROOT_DIR=/usr/local/aqua \
+    VOLTA_HOME=/opt/volta \
+    PATH=/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:/usr/local/bin:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
+CMD ["tail", "-F", "/dev/null"]
+
+# 既定 build と amd64 image は従来の layer 構成を維持する。
+FROM final AS default
