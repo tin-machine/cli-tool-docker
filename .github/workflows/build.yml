@@ -140,13 +140,23 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
+          target: workspace-flat
           platforms: linux/arm64
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
           cache-from: type=gha,scope=arm64
           cache-to: type=gha,mode=min,scope=arm64
       - name: Verify published ARM64 manifest
-        run: docker buildx imagetools inspect ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
+        run: |
+          image_ref="ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}"
+          docker buildx imagetools inspect "$image_ref"
+          digest="$(
+            docker buildx imagetools inspect --raw "$image_ref" |
+              jq -er '.manifests[]
+                | select(.platform.os == "linux" and .platform.architecture == "arm64")
+                | .digest'
+          )"
+          docker buildx imagetools inspect --raw "ghcr.io/${{ github.repository_owner }}/cli-tool-docker@$digest" | jq -e '.layers | length == 1'
       - name: Smoke test ARM64 workspace identity and CLI tools
         run: |
           mkdir -p "$RUNNER_TEMP/cli-home" "$RUNNER_TEMP/cli-state"
