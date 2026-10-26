@@ -12,8 +12,9 @@ export TMUX_TMPDIR=/run/workspace-tmux
 unset TMUX TMUX_PANE
 tmux_socket=/run/workspace-tmux/workspace.sock
 for _ in {1..20}; do
-    if tmux -S "$tmux_socket" has-session -t workspace 2>/dev/null; then
-        exec tmux -S "$tmux_socket" attach-session -t workspace
+    if tmux -N -S "$tmux_socket" show-options -s >/dev/null 2>&1; then
+        # -N prevents accidentally starting a server inside the SSH sidecar.
+        exec tmux -N -S "$tmux_socket" new-session -A -s workspace 'fish -l'
     fi
     sleep 1
 done

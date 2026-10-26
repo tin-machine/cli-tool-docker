@@ -54,6 +54,11 @@ if [ "$WORKSPACE_MODE" = 1 ]; then
         echo '[entrypoint] workspaceのCODEX_HOMEは/work-state/codexに固定してください' >&2
         exit 2
     fi
+    export PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-/work-state/pi}"
+    if [ "$PI_CODING_AGENT_DIR" != /work-state/pi ]; then
+        echo '[entrypoint] workspaceのPI_CODING_AGENT_DIRは/work-state/piに固定してください' >&2
+        exit 2
+    fi
 fi
 
 # shell.bashから起動した場合、下記の情報はsudo nerdctl logs -f <コンテナID> で確認可能
@@ -185,12 +190,15 @@ if [ "$WORKSPACE_MODE" = 1 ]; then
         echo '[entrypoint] workspaceのuser/group/homeが要求値と一致しません' >&2
         exit 2
     fi
-    if ! install -d -m 0700 -o "$USER_ID" -g "$GROUP_ID" -- "$CODEX_HOME"; then
-        echo '[entrypoint] CODEX_HOMEを初期化できません' >&2
-        exit 2
-    fi
-    if ! gosu "$USER_NAME" test -w "$HOME_DIR" || ! gosu "$USER_NAME" test -w "$CODEX_HOME"; then
-        echo '[entrypoint] workspaceのhomeまたはCODEX_HOMEに書き込めません' >&2
+    for state_dir in "$CODEX_HOME" "$PI_CODING_AGENT_DIR"; do
+        if ! install -d -m 0700 -o "$USER_ID" -g "$GROUP_ID" -- "$state_dir" \
+            || ! gosu "$USER_NAME" test -w "$state_dir"; then
+            echo '[entrypoint] workspaceのagent stateを初期化できません' >&2
+            exit 2
+        fi
+    done
+    if ! gosu "$USER_NAME" test -w "$HOME_DIR"; then
+        echo '[entrypoint] workspaceのhomeに書き込めません' >&2
         exit 2
     fi
 fi
@@ -207,7 +215,8 @@ if [ "$WORKSPACE_TMUX" = 1 ]; then
     tmux_socket=/run/workspace-tmux/workspace.sock
     if ! gosu "$USER_NAME" tmux -S "$tmux_socket" has-session -t workspace 2>/dev/null; then
         # tmux socketはPod内のemptyDirに置く。Pod再作成ではsessionもsocketも消える。
-        if ! gosu "$USER_NAME" tmux -S "$tmux_socket" new-session -d -s workspace 'fish -l'; then
+        if ! gosu "$USER_NAME" tmux -S "$tmux_socket" new-session -d -s workspace 'fish -l' \
+            ';' set-option -s exit-empty off; then
             echo '[entrypoint] workspaceのtmux sessionを起動できません' >&2
             exit 1
         fi
