@@ -18,6 +18,8 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$fixture/home" "$fixture/state/ssh" "$fixture/socket" "$fixture/keys"
+mkdir -p "$fixture/home/.config/fish"
+printf '%s\n' 'set -gx WORKSPACE_SMOKE_CONFIG loaded' > "$fixture/home/.config/fish/config.fish"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture/client"
 cp "$fixture/client.pub" "$fixture/keys/authorized_keys"
 chmod 0444 "$fixture/keys/authorized_keys"
@@ -101,9 +103,14 @@ fi
 test "$(tmux_in_cli display-message -p -t workspace:0.0 '#{pane_current_command}')" = fish
 test "$(tmux_in_cli show-environment -g CODEX_HOME)" = CODEX_HOME=/work-state/codex
 first_id="$(tmux_in_cli display-message -p -t workspace '#{session_id}')"
+printf '%s\n' /work-home /work-state/codex loaded "$(id -u)" > "$fixture/expected"
+# The expected output is assembled by fish, so its presence is not just input echo.
+# shellcheck disable=SC2016 # Expand these variables in the remote fish pane.
+probe_command='printf "%s\n" "$HOME" "$CODEX_HOME" "$WORKSPACE_SMOKE_CONFIG" (id -u) > "$HOME/ssh-smoke"; printf "workspace-%s-ok\n" stdio'
 
 for _ in 1 2; do
-    python3 tests/ssh-pty-client.py ssh -tt "${ssh_options[@]}" workspace@127.0.0.1 &
+    python3 tests/ssh-pty-client.py "$probe_command" workspace-stdio-ok \
+        ssh -tt "${ssh_options[@]}" workspace@127.0.0.1 &
     client_pid=$!
     attached=false
     for attempt in 1 2 3 4 5; do
@@ -118,6 +125,8 @@ for _ in 1 2; do
         exit 1
     fi
     wait "$client_pid"
+    cmp "$fixture/expected" "$fixture/home/ssh-smoke"
+    rm "$fixture/home/ssh-smoke"
     test "$(tmux_in_cli display-message -p -t workspace '#{session_id}')" = "$first_id"
 done
 
