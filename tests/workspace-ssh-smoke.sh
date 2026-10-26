@@ -70,7 +70,7 @@ ssh_options=(
 
 tmux_in_cli() {
     docker exec -u "$(id -u):$(id -g)" \
-        -e TMUX_TMPDIR=/run/workspace-tmux "$cli_container" tmux "$@"
+        "$cli_container" tmux -S /run/workspace-tmux/workspace.sock "$@"
 }
 
 for attempt in 1 2 3 4 5 6 7 8 9 10; do

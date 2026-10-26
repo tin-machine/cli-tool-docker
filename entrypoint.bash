@@ -203,9 +203,14 @@ if [ "$WORKSPACE_TMUX" = 1 ]; then
     install -d -m 0700 -o "$USER_ID" -g "$GROUP_ID" /run/workspace-tmux
     export TMUX_TMPDIR=/run/workspace-tmux
     export SHELL=/usr/bin/fish
-    if ! gosu "$USER_NAME" tmux has-session -t workspace 2>/dev/null; then
+    unset TMUX TMUX_PANE
+    tmux_socket=/run/workspace-tmux/workspace.sock
+    if ! gosu "$USER_NAME" tmux -S "$tmux_socket" has-session -t workspace 2>/dev/null; then
         # tmux socketはPod内のemptyDirに置く。Pod再作成ではsessionもsocketも消える。
-        gosu "$USER_NAME" tmux new-session -d -s workspace 'fish -l'
+        if ! gosu "$USER_NAME" tmux -S "$tmux_socket" new-session -d -s workspace 'fish -l'; then
+            echo '[entrypoint] workspaceのtmux sessionを起動できません' >&2
+            exit 1
+        fi
     fi
 fi
 

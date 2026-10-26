@@ -9,9 +9,11 @@ if [ "$#" -ne 0 ] || [ -z "${SSH_TTY:-}" ]; then
 fi
 
 export TMUX_TMPDIR=/run/workspace-tmux
+unset TMUX TMUX_PANE
+tmux_socket=/run/workspace-tmux/workspace.sock
 for _ in {1..20}; do
-    if tmux has-session -t workspace 2>/dev/null; then
-        exec tmux attach-session -t workspace
+    if tmux -S "$tmux_socket" has-session -t workspace 2>/dev/null; then
+        exec tmux -S "$tmux_socket" attach-session -t workspace
     fi
     sleep 1
 done
