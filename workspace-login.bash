@@ -11,10 +11,13 @@ fi
 export TMUX_TMPDIR=/run/workspace-tmux
 unset TMUX TMUX_PANE
 tmux_socket=/run/workspace-tmux/workspace.sock
+# PAM may replace sshd's PATH; use the binary shared with the CLI image.
+tmux_bin=/opt/tmux/bin/tmux
+"$tmux_bin" -V >/dev/null
 for _ in {1..20}; do
-    if tmux -N -S "$tmux_socket" show-options -s >/dev/null 2>&1; then
+    if "$tmux_bin" -N -S "$tmux_socket" show-options -s >/dev/null 2>&1; then
         # -N prevents accidentally starting a server inside the SSH sidecar.
-        exec tmux -N -S "$tmux_socket" new-session -A -s workspace 'fish -l'
+        exec "$tmux_bin" -N -S "$tmux_socket" new-session -A -s workspace 'fish -l'
     fi
     sleep 1
 done
