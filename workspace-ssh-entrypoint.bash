@@ -26,8 +26,9 @@ if [ ! -d /run/workspace-tmux ] || [ ! -d /work-state ]; then
     exit 2
 fi
 
-group_name="$(getent group "$group_id" | cut -d: -f1)"
-if [ -z "$group_name" ]; then
+if group_entry="$(getent group "$group_id")"; then
+    group_name="${group_entry%%:*}"
+else
     group_name="$user_name"
     groupadd -g "$group_id" "$group_name"
 fi

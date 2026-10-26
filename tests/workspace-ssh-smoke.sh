@@ -7,6 +7,11 @@ fixture="$(mktemp -d)"
 cli_container="workspace-cli-smoke-$$"
 ssh_container="workspace-ssh-smoke-$$"
 cleanup() {
+    local result=$?
+    if [ "$result" -ne 0 ]; then
+        docker logs --tail 100 "$cli_container" >&2 || true
+        docker logs --tail 100 "$ssh_container" >&2 || true
+    fi
     docker rm -f "$ssh_container" "$cli_container" >/dev/null 2>&1 || true
     rm -rf "$fixture" 2>/dev/null || true
 }
