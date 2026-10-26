@@ -24,7 +24,7 @@ jobs:
       - name: Run shellcheck on shell scripts
         uses: azohra/shell-linter@v0.6.0
         with:
-          files: entrypoint.bash shell.bash
+          files: entrypoint.bash shell.bash workspace-login.bash tests/workspace-ssh-smoke.sh
 
   build-and-push:
     needs: lint
@@ -171,6 +171,10 @@ jobs:
             -e CODEX_HOME=/work-state/codex \
             ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }} \
             bash -lc 'test "$(id -u)" = "$CLI_USER_ID" && test "$HOME" = /work-home && test -w "$HOME" && test -w "$CODEX_HOME" && command -v git && command -v tmux && command -v nvim && command -v codex && command -v pi && command -v uvx'
+      - name: Smoke test SSH login and tmux reconnect
+        env:
+          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
+        run: bash tests/workspace-ssh-smoke.sh "$IMAGE_REF"
 
   # リリースノート作成（mainブランチ push 時）
   release-draft:

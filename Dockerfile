@@ -75,6 +75,7 @@ RUN apt-get update && \
       nmap \
       nkf \
       openjdk-21-jdk \
+      openssh-server \
       7zip \
       7zip-rar \
       passwd \
@@ -512,6 +513,7 @@ COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
 COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
 COPY --from=yazi-install     /out/share/            /usr/local/share/
 COPY --chmod=0755 entrypoint.bash /usr/local/bin/entrypoint.bash
+COPY --chmod=0755 workspace-login.bash /usr/local/bin/workspace-login
 
 # =========================
 # Final runtime image
