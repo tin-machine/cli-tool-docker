@@ -69,7 +69,11 @@ Port 22
 ListenAddress 0.0.0.0
 HostKey $host_key
 PidFile /run/workspace-sshd.pid
-AuthorizedKeysFile $key_file
+AuthorizedKeysFile none
+# Kubernetes Secret projection roots are mode 1777, which StrictModes rejects.
+# Read the fixed, read-only public-key file without accepting keys from HOME.
+AuthorizedKeysCommand /usr/bin/cat $key_file
+AuthorizedKeysCommandUser root
 AuthenticationMethods publickey
 PubkeyAuthentication yes
 PasswordAuthentication no

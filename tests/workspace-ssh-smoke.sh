@@ -13,6 +13,8 @@ cleanup() {
         docker logs --tail 100 "$ssh_container" >&2 || true
     fi
     docker rm -f "$ssh_container" "$cli_container" >/dev/null 2>&1 || true
+    docker run --rm --entrypoint chown -v "$fixture:/fixture" "$ssh_image" \
+        -R "$(id -u):$(id -g)" /fixture >/dev/null 2>&1 || true
     rm -rf "$fixture" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -24,8 +26,9 @@ printf '%s\n' 'set -g status off' > "$fixture/home/.tmux.conf"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture/client"
 cp "$fixture/client.pub" "$fixture/keys/authorized_keys"
 chmod 0444 "$fixture/keys/authorized_keys"
-# Kubernetes Secret files are root-owned; make the Docker fixture equivalent.
-docker run --rm --entrypoint chown -v "$fixture/keys:/keys" "$ssh_image" 0:0 /keys/authorized_keys
+# Kubernetes projects root-owned files beneath a mode 1777 volume root.
+docker run --rm --entrypoint bash -v "$fixture/keys:/keys" "$ssh_image" \
+    -c 'chown 0:0 /keys /keys/authorized_keys; chmod 1777 /keys'
 
 identity=(
     -e USER_NAME=workspace
@@ -61,6 +64,10 @@ docker run -d --name "$ssh_container" -p 127.0.0.1::22 \
 port="$(docker port "$ssh_container" 22/tcp | sed -n 's/.*://p')"
 test -n "$port"
 docker exec "$ssh_container" test ! -e /work-state/codex
+if docker exec "$ssh_container" touch /run/workspace-ssh/write-probe 2>/dev/null; then
+    echo 'SSH public-key mount must be read-only' >&2
+    exit 1
+fi
 ssh_options=(
     -i "$fixture/client"
     -p "$port"
