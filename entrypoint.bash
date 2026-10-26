@@ -215,7 +215,7 @@ if [ "$WORKSPACE_TMUX" = 1 ]; then
     tmux_socket=/run/workspace-tmux/workspace.sock
     if ! gosu "$USER_NAME" tmux -S "$tmux_socket" has-session -t workspace 2>/dev/null; then
         # tmux socketはPod内のemptyDirに置く。Pod再作成ではsessionもsocketも消える。
-        if ! gosu "$USER_NAME" tmux -S "$tmux_socket" new-session -d -s workspace 'fish -l' \
+        if ! gosu "$USER_NAME" tmux -S "$tmux_socket" new-session -d -s workspace -c "$HOME_DIR" 'fish -l' \
             ';' set-option -s exit-empty off; then
             echo '[entrypoint] workspaceのtmux sessionを起動できません' >&2
             exit 1

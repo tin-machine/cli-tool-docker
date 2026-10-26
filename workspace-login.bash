@@ -17,7 +17,8 @@ tmux_bin=/opt/tmux/bin/tmux
 for _ in {1..20}; do
     if "$tmux_bin" -N -S "$tmux_socket" show-options -s >/dev/null 2>&1; then
         # -N prevents accidentally starting a server inside the SSH sidecar.
-        exec "$tmux_bin" -N -S "$tmux_socket" new-session -A -s workspace 'fish -l'
+        # Expand HOME in the CLI server; the sidecar does not mount that home.
+        exec "$tmux_bin" -N -S "$tmux_socket" new-session -A -s workspace -c '#{HOME}' 'fish -l'
     fi
     sleep 1
 done

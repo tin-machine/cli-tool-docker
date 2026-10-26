@@ -105,10 +105,10 @@ test "$(tmux_in_cli display-message -p -t workspace:0.0 '#{pane_current_command}
 test "$(tmux_in_cli show-options -gv status)" = off
 test "$(tmux_in_cli show-environment -g CODEX_HOME)" = CODEX_HOME=/work-state/codex
 first_id="$(tmux_in_cli display-message -p -t workspace '#{session_id}')"
-printf '%s\n' /work-home /work-state/codex /work-state/pi loaded "$(id -u)" > "$fixture/expected"
+printf '%s\n' /work-home /work-state/codex /work-state/pi loaded "$(id -u)" /work-home > "$fixture/expected"
 # The expected output is assembled by fish, so its presence is not just input echo.
 # shellcheck disable=SC2016 # Expand these variables in the remote fish pane.
-probe_command='printf "%s\n" "$HOME" "$CODEX_HOME" "$PI_CODING_AGENT_DIR" "$WORKSPACE_SMOKE_CONFIG" (id -u) > "$HOME/ssh-smoke"; test -w "$PI_CODING_AGENT_DIR"; and printf "workspace-%s-ok\n" stdio'
+probe_command='printf "%s\n" "$HOME" "$CODEX_HOME" "$PI_CODING_AGENT_DIR" "$WORKSPACE_SMOKE_CONFIG" (id -u) (pwd) > "$HOME/ssh-smoke"; cd "$HOME/.config"; and test -w "$PI_CODING_AGENT_DIR"; and printf "workspace-%s-ok\n" stdio'
 
 for _ in 1 2; do
     python3 tests/ssh-pty-client.py "$probe_command" workspace-stdio-ok \
@@ -130,10 +130,13 @@ for _ in 1 2; do
     cmp "$fixture/expected" "$fixture/home/ssh-smoke"
     rm "$fixture/home/ssh-smoke"
     test "$(tmux_in_cli display-message -p -t workspace '#{session_id}')" = "$first_id"
+    # Reattach must preserve the pane's working directory after cd.
+    printf '%s\n' /work-home /work-state/codex /work-state/pi loaded "$(id -u)" /work-home/.config > "$fixture/expected"
 done
 
 # Closing the last pane must allow the next login to create a CLI-side session.
 tmux_in_cli kill-session -t '=workspace'
+printf '%s\n' /work-home /work-state/codex /work-state/pi loaded "$(id -u)" /work-home > "$fixture/expected"
 python3 tests/ssh-pty-client.py "$probe_command" workspace-stdio-ok \
     ssh -tt "${ssh_options[@]}" workspace@127.0.0.1
 cmp "$fixture/expected" "$fixture/home/ssh-smoke"
