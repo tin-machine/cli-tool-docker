@@ -57,6 +57,7 @@ ssh_options=(
     -i "$fixture/client"
     -p "$port"
     -o BatchMode=yes
+    -o IdentitiesOnly=yes
     -o StrictHostKeyChecking=accept-new
     -o UserKnownHostsFile="$fixture/known_hosts"
     -o ConnectTimeout=5
