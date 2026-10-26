@@ -22,9 +22,7 @@ jobs:
       - name: Run yamllint
         uses: ibiqlik/action-yamllint@v3
       - name: Run shellcheck on shell scripts
-        uses: azohra/shell-linter@v0.6.0
-        with:
-          files: entrypoint.bash shell.bash workspace-login.bash workspace-ssh-entrypoint.bash tests/workspace-ssh-smoke.sh
+        run: shellcheck entrypoint.bash shell.bash workspace-login.bash workspace-ssh-entrypoint.bash tests/workspace-ssh-smoke.sh
 
   build-and-push:
     needs: lint
@@ -154,8 +152,8 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:ssh-arm64-${{ github.sha }}
-          cache-from: type=gha,scope=arm64
-          cache-to: type=gha,mode=min,scope=arm64
+          cache-from: type=gha,scope=ssh-arm64
+          cache-to: type=gha,mode=min,scope=ssh-arm64
       - name: Verify published ARM64 manifest
         run: |
           image_ref="ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}"

@@ -16,6 +16,32 @@
 Linux では既定で `ghcr.io/tin-machine/cli-tool-docker:latest` を使う。
 macOS では `cli-tool-docker:latest` がなければ、この repository の Dockerfile から local build する。
 
+## Kubernetes workspace の SSH 入口
+
+SSH は `workspace-ssh-sidecar` target の専用 image で受け、CLI container の tmux へ接続する。
+CLI と sidecar の `USER_NAME`、`CLI_USER_ID`、`CLI_GROUP_ID` は同じ非 root identity にする。
+
+| Container | 設定・mount |
+| --- | --- |
+| CLI (`workspace-flat`) | `CLI_WORKSPACE_MODE=1`、`CLI_WORKSPACE_TMUX=1`、`HOME=/work-home`、`CODEX_HOME=/work-state/codex`。home と永続 state volume を mount |
+| SSH (`workspace-ssh-sidecar`) | root 所有・mode 0444 または 0400 の `/run/workspace-ssh/authorized_keys` と、永続 host key directory `/work-state/ssh` を mount |
+| 共通 | `/run/workspace-tmux` に同じ一時 volume を mount。Kubernetes では `emptyDir` を使う |
+
+CLI は `workspace` session と `fish -l` を起動し、home の fish/tmux 設定を読む。
+Pi の状態は `PI_CODING_AGENT_DIR=/work-state/pi` に初期化する。sidecar に home 全体や CLI ツールを mount する必要はない。
+接続先は `/run/workspace-tmux/workspace.sock` に固定し、sidecar の tmux client は `-N` で server の誤起動を防ぐ。
+SSH 切断後は同じ session に戻り、最後の pane を終了した場合は次回ログインで CLI 側に新しい session を作る。
+
+この入口は対話 SSH 専用で、リモート command と SFTP は提供しない。
+Pod / CLI container の再作成で実行中の tmux は失われる。host key と作業ファイルの保持は永続 volume の役割である。
+公開 port は sidecar の TCP 22。tailnet への公開と接続先名は Kubernetes 側で設定する。
+
+2つの image を build して参照名を `CLI_IMAGE_REF` と `SSH_IMAGE_REF` に設定すると、公開鍵認証、fish 設定、SSH 入出力、切断後の復帰を検証できる。
+
+```bash
+bash tests/workspace-ssh-smoke.sh "$CLI_IMAGE_REF" "$SSH_IMAGE_REF"
+```
+
 # コンテナのイメージのビルド方法
 
 local で確認する時は、日常利用中の `latest` を上書きしないように別 tag を使う。
