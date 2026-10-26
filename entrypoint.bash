@@ -8,17 +8,17 @@ USER_NAME="${USER_NAME:-${USER:-customuser}}"
 HOME_DIR="$HOME"
 GROUP_NAME="$USER_NAME"
 WORKSPACE_MODE="${CLI_WORKSPACE_MODE:-0}"
-WORKSPACE_SSH="${CLI_WORKSPACE_SSH:-0}"
+WORKSPACE_TMUX="${CLI_WORKSPACE_TMUX:-0}"
 if [ "$WORKSPACE_MODE" != 0 ] && [ "$WORKSPACE_MODE" != 1 ]; then
     echo '[entrypoint] CLI_WORKSPACE_MODEは0または1にしてください' >&2
     exit 2
 fi
-if [ "$WORKSPACE_SSH" != 0 ] && [ "$WORKSPACE_SSH" != 1 ]; then
-    echo '[entrypoint] CLI_WORKSPACE_SSHは0または1にしてください' >&2
+if [ "$WORKSPACE_TMUX" != 0 ] && [ "$WORKSPACE_TMUX" != 1 ]; then
+    echo '[entrypoint] CLI_WORKSPACE_TMUXは0または1にしてください' >&2
     exit 2
 fi
-if [ "$WORKSPACE_SSH" = 1 ] && [ "$WORKSPACE_MODE" != 1 ]; then
-    echo '[entrypoint] SSH入口にはCLI_WORKSPACE_MODE=1が必要です' >&2
+if [ "$WORKSPACE_TMUX" = 1 ] && [ "$WORKSPACE_MODE" != 1 ]; then
+    echo '[entrypoint] tmux共有入口にはCLI_WORKSPACE_MODE=1が必要です' >&2
     exit 2
 fi
 DOCKER_SOCK_GID="${DOCKER_SOCK_GID:-}"
@@ -195,72 +195,17 @@ if [ "$WORKSPACE_MODE" = 1 ]; then
     fi
 fi
 
-if [ "$WORKSPACE_SSH" = 1 ]; then
-    if [[ ! "$USER_NAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
-        echo '[entrypoint] SSH user名が不正です' >&2
+if [ "$WORKSPACE_TMUX" = 1 ]; then
+    if [ ! -d /run/workspace-tmux ] || [ -L /run/workspace-tmux ]; then
+        echo '[entrypoint] tmux共有volumeがありません' >&2
         exit 2
     fi
-    key_file=/run/workspace-ssh/authorized_keys
-    if [ ! -f "$key_file" ] || [ ! -s "$key_file" ]; then
-        echo '[entrypoint] SSH公開鍵Secretがありません' >&2
-        exit 2
-    fi
-    key_mode="$(stat -L -c %a "$key_file")"
-    key_owner="$(stat -L -c %u "$key_file")"
-    if [ "$key_owner" != 0 ] || { [ "$key_mode" != 444 ] && [ "$key_mode" != 400 ]; }; then
-        echo '[entrypoint] SSH公開鍵Secretのowner/modeが不正です' >&2
-        exit 2
-    fi
-    # PasswordAuthentication を無効にしつつ、PAM account check で locked account とならないようにする。
-    passwd -d "$USER_NAME" >/dev/null
-    usermod -s /usr/local/bin/workspace-login "$USER_NAME"
-    if [ -L /work-state/ssh ]; then
-        echo '[entrypoint] SSH host key directoryがsymlinkです' >&2
-        exit 2
-    fi
-    install -d -m 0700 -o root -g root /work-state/ssh
-    host_key=/work-state/ssh/ssh_host_ed25519_key
-    if [ -L "$host_key" ]; then
-        echo '[entrypoint] SSH host keyがsymlinkです' >&2
-        exit 2
-    fi
-    if [ -e "$host_key" ]; then
-        if [ ! -f "$host_key" ] || [ "$(stat -c %u "$host_key")" != 0 ] || [ "$(stat -c %a "$host_key")" != 600 ]; then
-            echo '[entrypoint] SSH host keyのowner/modeが不正です' >&2
-            exit 2
-        fi
-    else
-        ssh-keygen -q -t ed25519 -N '' -f "$host_key"
-    fi
-    install -d -m 0755 /run/sshd
-    cat > /run/workspace-sshd_config <<EOF
-Port 22
-ListenAddress 0.0.0.0
-HostKey $host_key
-PidFile /run/workspace-sshd.pid
-AuthorizedKeysFile $key_file
-AuthenticationMethods publickey
-PubkeyAuthentication yes
-PasswordAuthentication no
-KbdInteractiveAuthentication no
-PermitEmptyPasswords no
-PermitRootLogin no
-AllowUsers $USER_NAME
-UsePAM yes
-StrictModes yes
-PermitTunnel no
-AllowTcpForwarding no
-X11Forwarding no
-SetEnv CODEX_HOME=/work-state/codex
-SetEnv LANG=ja_JP.UTF-8
-SetEnv LC_ALL=ja_JP.UTF-8
-SetEnv TZ=Asia/Tokyo
-SetEnv PATH=/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:/usr/local/bin:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-Subsystem sftp /usr/lib/openssh/sftp-server
-EOF
-    /usr/sbin/sshd -t -f /run/workspace-sshd_config
-    if [ "$#" -eq 0 ] || { [ "$#" -eq 3 ] && [ "$1" = tail ] && [ "$2" = -F ] && [ "$3" = /dev/null ]; }; then
-        exec /usr/sbin/sshd -D -e -f /run/workspace-sshd_config
+    install -d -m 0700 -o "$USER_ID" -g "$GROUP_ID" /run/workspace-tmux
+    export TMUX_TMPDIR=/run/workspace-tmux
+    export SHELL=/usr/bin/fish
+    if ! gosu "$USER_NAME" tmux has-session -t workspace 2>/dev/null; then
+        # tmux socketはPod内のemptyDirに置く。Pod再作成ではsessionもsocketも消える。
+        gosu "$USER_NAME" tmux new-session -d -s workspace 'fish -l'
     fi
 fi
 

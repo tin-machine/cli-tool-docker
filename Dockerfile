@@ -75,7 +75,6 @@ RUN apt-get update && \
       nmap \
       nkf \
       openjdk-21-jdk \
-      openssh-server \
       7zip \
       7zip-rar \
       passwd \
@@ -513,7 +512,6 @@ COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
 COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
 COPY --from=yazi-install     /out/share/            /usr/local/share/
 COPY --chmod=0755 entrypoint.bash /usr/local/bin/entrypoint.bash
-COPY --chmod=0755 workspace-login.bash /usr/local/bin/workspace-login
 
 # =========================
 # Final runtime image
@@ -561,6 +559,26 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:/usr/local/bin:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
 ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 CMD ["tail", "-F", "/dev/null"]
+
+# SSHはCLI workspaceとは別containerで終端し、共有tmux socketへ接続する。
+FROM ubuntu:26.04 AS workspace-ssh-sidecar
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=ja_JP.UTF-8 \
+    LC_ALL=ja_JP.UTF-8 \
+    TZ=Asia/Tokyo \
+    PATH=/opt/tmux/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install \
+      libevent-2.1-7t64 libtinfo6 locales openssh-server passwd && \
+    locale-gen ja_JP.UTF-8 && \
+    install -d -m 0755 /work-home && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=tmux-build /opt/tmux /opt/tmux
+COPY --chmod=0755 workspace-ssh-entrypoint.bash /usr/local/bin/workspace-ssh-entrypoint
+COPY --chmod=0755 workspace-login.bash /usr/local/bin/workspace-login
+ENTRYPOINT ["/usr/local/bin/workspace-ssh-entrypoint"]
+EXPOSE 22
 
 # 既定 build と amd64 image は従来の layer 構成を維持する。
 FROM final AS default

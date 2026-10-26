@@ -1,46 +1,58 @@
 #!/bin/bash
 set -euo pipefail
 
-image="${1:?image reference required}"
+cli_image="${1:?CLI image required}"
+ssh_image="${2:?SSH sidecar image required}"
 fixture="$(mktemp -d)"
-container="workspace-ssh-smoke-$$"
+cli_container="workspace-cli-smoke-$$"
+ssh_container="workspace-ssh-smoke-$$"
 cleanup() {
-    docker rm -f "$container" >/dev/null 2>&1 || true
-    # The host key directory is root-owned inside the container; CI runner cleanup owns the fixture.
+    docker rm -f "$ssh_container" "$cli_container" >/dev/null 2>&1 || true
     rm -rf "$fixture" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-mkdir -p "$fixture/home" "$fixture/state" "$fixture/keys"
+mkdir -p "$fixture/home" "$fixture/state/ssh" "$fixture/socket" "$fixture/keys"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture/client"
 cp "$fixture/client.pub" "$fixture/keys/authorized_keys"
 chmod 0444 "$fixture/keys/authorized_keys"
-# Match Kubernetes Secret projection ownership without requiring runner sudo.
-docker run --rm --entrypoint chown -v "$fixture/keys:/keys" "$image" 0:0 /keys/authorized_keys
+# Kubernetes Secret files are root-owned; make the Docker fixture equivalent.
+docker run --rm --entrypoint chown -v "$fixture/keys:/keys" "$ssh_image" 0:0 /keys/authorized_keys
 
-workspace_env=(
-    -e HOME=/work-home
+identity=(
     -e USER_NAME=workspace
     -e CLI_USER_ID="$(id -u)"
     -e CLI_GROUP_ID="$(id -g)"
-    -e CLI_WORKSPACE_MODE=1
-    -e CLI_WORKSPACE_SSH=1
-    -e CODEX_HOME=/work-state/codex
-    -v "$fixture/home:/work-home"
-    -v "$fixture/state:/work-state"
 )
+docker run -d --name "$cli_container" \
+    "${identity[@]}" \
+    -e HOME=/work-home \
+    -e CLI_WORKSPACE_MODE=1 \
+    -e CLI_WORKSPACE_TMUX=1 \
+    -e CODEX_HOME=/work-state/codex \
+    -v "$fixture/home:/work-home" \
+    -v "$fixture/state:/work-state" \
+    -v "$fixture/socket:/run/workspace-tmux" \
+    "$cli_image" >/dev/null
 
-# The SSH opt-in must fail closed without an authorized_keys Secret mount.
-if docker run --rm "${workspace_env[@]}" "$image" >/dev/null 2>&1; then
+# The sidecar must fail closed when the authorized_keys mount is absent.
+if docker run --rm "${identity[@]}" \
+    -v "$fixture/state/ssh:/work-state/ssh" \
+    -v "$fixture/socket:/run/workspace-tmux" \
+    "$ssh_image" >/dev/null 2>&1; then
     echo 'SSH started without authorized_keys' >&2
     exit 1
 fi
 
-docker run -d --name "$container" -p 127.0.0.1::22 \
-    "${workspace_env[@]}" -v "$fixture/keys:/run/workspace-ssh:ro" \
-    "$image" >/dev/null
-port="$(docker port "$container" 22/tcp | sed -n 's/.*://p')"
+docker run -d --name "$ssh_container" -p 127.0.0.1::22 \
+    "${identity[@]}" \
+    -v "$fixture/state/ssh:/work-state/ssh" \
+    -v "$fixture/socket:/run/workspace-tmux" \
+    -v "$fixture/keys:/run/workspace-ssh:ro" \
+    "$ssh_image" >/dev/null
+port="$(docker port "$ssh_container" 22/tcp | sed -n 's/.*://p')"
 test -n "$port"
+docker exec "$ssh_container" test ! -e /work-state/codex
 ssh_options=(
     -i "$fixture/client"
     -p "$port"
@@ -50,22 +62,57 @@ ssh_options=(
     -o ConnectTimeout=5
 )
 
+tmux_in_cli() {
+    docker exec -u "$(id -u):$(id -g)" \
+        -e TMUX_TMPDIR=/run/workspace-tmux "$cli_container" tmux "$@"
+}
+
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
-    if ssh "${ssh_options[@]}" workspace@127.0.0.1 'test "$CODEX_HOME" = /work-state/codex && test "$(id -u)" = '"$(id -u)" >/dev/null 2>&1; then
+    if tmux_in_cli has-session -t workspace 2>/dev/null &&
+       ssh-keyscan -T 2 -p "$port" 127.0.0.1 >/dev/null 2>&1; then
         break
     fi
     if [ "$attempt" -eq 10 ]; then
-        docker logs "$container" >&2
+        docker logs "$cli_container" >&2
+        docker logs "$ssh_container" >&2
         exit 1
     fi
     sleep 1
 done
+ssh-keygen -q -t ed25519 -N '' -f "$fixture/unknown-client"
+if ssh -F /dev/null -i "$fixture/unknown-client" -p "$port" \
+    -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+    -o UserKnownHostsFile="$fixture/known_hosts" -o ConnectTimeout=5 \
+    workspace@127.0.0.1 true \
+    >"$fixture/unknown-client.log" 2>&1; then
+    echo 'Unregistered SSH key was accepted' >&2
+    exit 1
+fi
+if ! grep -q 'Permission denied (publickey)' "$fixture/unknown-client.log"; then
+    cat "$fixture/unknown-client.log" >&2
+    exit 1
+fi
+test "$(tmux_in_cli display-message -p -t workspace:0.0 '#{pane_current_command}')" = fish
+test "$(tmux_in_cli show-environment -g CODEX_HOME)" = CODEX_HOME=/work-state/codex
+first_id="$(tmux_in_cli display-message -p -t workspace '#{session_id}')"
 
-# No remote command: the login shell must attach the named tmux session.
-timeout 4 ssh -tt "${ssh_options[@]}" workspace@127.0.0.1 </dev/null >"$fixture/first.log" 2>&1 || test "$?" -eq 124
-first_id="$(ssh "${ssh_options[@]}" workspace@127.0.0.1 'tmux display-message -p -t workspace "#{session_id}"')"
-test -n "$first_id"
-timeout 4 ssh -tt "${ssh_options[@]}" workspace@127.0.0.1 </dev/null >"$fixture/second.log" 2>&1 || test "$?" -eq 124
-second_id="$(ssh "${ssh_options[@]}" workspace@127.0.0.1 'tmux display-message -p -t workspace "#{session_id}"')"
-test "$first_id" = "$second_id"
-ssh "${ssh_options[@]}" workspace@127.0.0.1 'tmux kill-session -t workspace'
+for _ in 1 2; do
+    python3 tests/ssh-pty-client.py ssh -tt "${ssh_options[@]}" workspace@127.0.0.1 &
+    client_pid=$!
+    attached=false
+    for attempt in 1 2 3 4 5; do
+        if [ -n "$(tmux_in_cli list-clients -t workspace -F '#{client_name}')" ]; then
+            attached=true
+            break
+        fi
+        sleep 1
+    done
+    if [ "$attached" != true ]; then
+        docker logs "$ssh_container" >&2
+        exit 1
+    fi
+    wait "$client_pid"
+    test "$(tmux_in_cli display-message -p -t workspace '#{session_id}')" = "$first_id"
+done
+
+tmux_in_cli kill-session -t workspace
