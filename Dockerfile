@@ -570,11 +570,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/tmux/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN apt-get update && \
     apt-get -y --no-install-recommends install \
-      libevent-2.1-7t64 libtinfo6 locales openssh-server passwd && \
+      libevent-core-2.1-7t64 libtinfo6 locales openssh-server passwd && \
     locale-gen ja_JP.UTF-8 && \
     install -d -m 0755 /work-home && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=tmux-build /opt/tmux /opt/tmux
+RUN tmux -V
 COPY --chmod=0755 workspace-ssh-entrypoint.bash /usr/local/bin/workspace-ssh-entrypoint
 COPY --chmod=0755 workspace-login.bash /usr/local/bin/workspace-login
 ENTRYPOINT ["/usr/local/bin/workspace-ssh-entrypoint"]

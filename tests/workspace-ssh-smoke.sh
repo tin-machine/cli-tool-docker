@@ -20,6 +20,7 @@ trap cleanup EXIT
 mkdir -p "$fixture/home" "$fixture/state/ssh" "$fixture/socket" "$fixture/keys"
 mkdir -p "$fixture/home/.config/fish"
 printf '%s\n' 'set -gx WORKSPACE_SMOKE_CONFIG loaded' > "$fixture/home/.config/fish/config.fish"
+printf '%s\n' 'set -g status off' > "$fixture/home/.tmux.conf"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture/client"
 cp "$fixture/client.pub" "$fixture/keys/authorized_keys"
 chmod 0444 "$fixture/keys/authorized_keys"
@@ -101,6 +102,7 @@ if ! grep -q 'Permission denied (publickey)' "$fixture/unknown-client.log"; then
     exit 1
 fi
 test "$(tmux_in_cli display-message -p -t workspace:0.0 '#{pane_current_command}')" = fish
+test "$(tmux_in_cli show-options -gv status)" = off
 test "$(tmux_in_cli show-environment -g CODEX_HOME)" = CODEX_HOME=/work-state/codex
 first_id="$(tmux_in_cli display-message -p -t workspace '#{session_id}')"
 printf '%s\n' /work-home /work-state/codex /work-state/pi loaded "$(id -u)" > "$fixture/expected"
