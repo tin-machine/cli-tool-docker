@@ -22,9 +22,7 @@ jobs:
       - name: Run yamllint
         uses: ibiqlik/action-yamllint@v3
       - name: Run shellcheck on shell scripts
-        uses: azohra/shell-linter@v0.6.0
-        with:
-          files: entrypoint.bash shell.bash
+        run: shellcheck entrypoint.bash shell.bash workspace-login.bash workspace-ssh-entrypoint.bash tests/workspace-ssh-smoke.sh
 
   build-and-push:
     needs: lint
@@ -145,7 +143,18 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
           cache-from: type=gha,scope=arm64
-          cache-to: type=gha,mode=min,scope=arm64
+          # Cache export is optional; image push and runtime tests must still pass.
+          cache-to: type=gha,mode=min,scope=arm64,ignore-error=true
+      - name: Build SSH sidecar image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: workspace-ssh-sidecar
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:ssh-arm64-${{ github.sha }}
+          cache-from: type=gha,scope=ssh-arm64
+          cache-to: type=gha,mode=min,scope=ssh-arm64,ignore-error=true
       - name: Verify published ARM64 manifest
         run: |
           image_ref="ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}"
@@ -171,6 +180,11 @@ jobs:
             -e CODEX_HOME=/work-state/codex \
             ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }} \
             bash -lc 'test "$(id -u)" = "$CLI_USER_ID" && test "$HOME" = /work-home && test -w "$HOME" && test -w "$CODEX_HOME" && command -v git && command -v tmux && command -v nvim && command -v codex && command -v pi && command -v uvx'
+      - name: Smoke test SSH login and tmux reconnect
+        env:
+          CLI_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
+          SSH_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:ssh-arm64-${{ github.sha }}
+        run: bash tests/workspace-ssh-smoke.sh "$CLI_IMAGE_REF" "$SSH_IMAGE_REF"
 
   # リリースノート作成（mainブランチ push 時）
   release-draft:
