@@ -159,7 +159,7 @@ RUN git clone https://github.com/neovim/neovim.git . && \
 # tmux build (with sixel)
 # =========================
 FROM build AS tmux-build
-ARG TMUX_VERSION=3.7b
+ARG TMUX_VERSION=3.8
 WORKDIR /build/tmux
 RUN git clone --depth 1 --branch "${TMUX_VERSION}" https://github.com/tmux/tmux.git . && \
     sh autogen.sh && \
