@@ -13,6 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Tokyo
 
 RUN apt-get update && \
+    apt-get -y upgrade && \
     apt-get -y --no-install-recommends install \
       language-pack-ja language-pack-ja-base locales tzdata && \
     locale-gen ja_JP.UTF-8 && \
@@ -569,6 +570,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Tokyo \
     PATH=/opt/tmux/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN apt-get update && \
+    apt-get -y upgrade && \
     apt-get -y --no-install-recommends install \
       libevent-core-2.1-7t64 libtinfo6 locales openssh-server passwd && \
     locale-gen ja_JP.UTF-8 && \
