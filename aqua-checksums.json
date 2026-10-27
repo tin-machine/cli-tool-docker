@@ -26,28 +26,28 @@
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/astral-sh/uv/0.6.14/uv-aarch64-apple-darwin.tar.gz",
-      "checksum": "4EA4731010FBD1BC8E790E07F199F55A5C7C2C732E9B77F85E302B0BEE61B756",
+      "id": "github_release/github.com/astral-sh/uv/0.13.5/uv-aarch64-apple-darwin.tar.gz",
+      "checksum": "743F85035A1996ECB350659E01CD9FAEA9709829BE09B1B4B03C73EAF3C9CD73",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/astral-sh/uv/0.6.14/uv-aarch64-unknown-linux-musl.tar.gz",
-      "checksum": "94E22C4BE44D205DEF456427639CA5CA1C1A9E29ACC31808A7B28FDD5DCF7F17",
+      "id": "github_release/github.com/astral-sh/uv/0.13.5/uv-aarch64-unknown-linux-musl.tar.gz",
+      "checksum": "7906C79ADB21C81ABD559841BA76BB1D9AF9D791ACAC7A041B2972E03AE16538",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/astral-sh/uv/0.6.14/uv-x86_64-apple-darwin.tar.gz",
-      "checksum": "1D8ECB2EB3B68FB50E4249DC96AC9D2458DC24068848F04F4C5B42AF2FD26552",
+      "id": "github_release/github.com/astral-sh/uv/0.13.5/uv-x86_64-apple-darwin.tar.gz",
+      "checksum": "B0F52B0E3945B4107D89024EA38E625683011FBFC05A0D98F9FA2D6DCEE28C66",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/astral-sh/uv/0.6.14/uv-x86_64-pc-windows-msvc.zip",
-      "checksum": "93B29FC234758E381DF461D7638FF73D0F08BDF3A0DC37923B1EE0B9E442CA3F",
+      "id": "github_release/github.com/astral-sh/uv/0.13.5/uv-x86_64-pc-windows-msvc.zip",
+      "checksum": "A38B8D1902B7CFBC76B423BA1BB456F623F42064CDC72628B6075B89AFD1019A",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/astral-sh/uv/0.6.14/uv-x86_64-unknown-linux-musl.tar.gz",
-      "checksum": "0CAC4DF0CB3457B154F2039AE471E89CD4E15F3BD790BBB3CB0B8B40D940B93E",
+      "id": "github_release/github.com/astral-sh/uv/0.13.5/uv-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "57EF9D9CCB01FB1BD998DF995B0DD221B52F7D7841FBEA93F2D4463BF61FB7A9",
       "algorithm": "sha256"
     },
     {
@@ -436,8 +436,8 @@
       "algorithm": "sha256"
     },
     {
-      "id": "registries/github_content/github.com/aquaproj/aqua-registry/v4.346.0/registry.yaml",
-      "checksum": "68E1512DFAB0878E0788890012C28BE47E3B43738EB4910C6B867394482671EE",
+      "id": "registries/github_content/github.com/aquaproj/aqua-registry/v4.578.0/registry.yaml",
+      "checksum": "EA4C2D5E969C4DA4C261F87B2B090A2BC137E6DC6406884E380AA465E25EA68D",
       "algorithm": "sha256"
     }
   ]

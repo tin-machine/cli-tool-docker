@@ -8,7 +8,7 @@ if [ "${RENOVATE_AQUA_CHECKSUM_FORCE:-}" != "1" ] && \
     exit 0
 fi
 
-aqua_version="${AQUA_VERSION:-v2.48.2}"
+aqua_version="${AQUA_VERSION:-v2.65.2}"
 
 case "$(uname -s)" in
     Linux)
