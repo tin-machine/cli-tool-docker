@@ -5,9 +5,6 @@
     "helpers:pinGitHubActionDigests",
     "github>aquaproj/aqua-renovate-config#2.12.1"
   ],
-  "schedule": [
-    "at 7pm on monday,wednesday,friday"
-  ],
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "14 days",
   "internalChecksFilter": "strict",
