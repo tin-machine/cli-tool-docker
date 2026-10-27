@@ -20,6 +20,14 @@
   },
   "packageRules": [
     {
+      "matchFileNames": ["aqua.yaml"],
+      "groupName": "aqua packages"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
       "matchDepTypes": ["devDependencies"],
       "automerge": true,
       "automergeType": "pr"
