@@ -226,7 +226,7 @@ RUN rm -rf /tmp/nerdctl
 # =========================
 FROM build AS cni-install
 ARG TARGETARCH
-ARG CNI_VERSION=v1.3.0
+ARG CNI_VERSION=v1.9.1
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN case "$TARGETARCH" in \
       amd64)  A=amd64 ;; \
@@ -286,7 +286,7 @@ ARG TARGETARCH
 ARG PI_CODING_AGENT_VERSION=1.3.0
 
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
-    AQUA_VERSION=v2.48.2 \
+    AQUA_VERSION=v2.65.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
@@ -323,7 +323,7 @@ WORKDIR /
 # Volta（公式スクリプトで確実に導入）
 RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
     mkdir -p "$VOLTA_HOME" && \
-    volta install node@v24.2.0 && \
+    volta install node@v24.22.1 && \
     volta install \
       tree-sitter-cli \
       @anthropic-ai/claude-code \
@@ -340,7 +340,7 @@ RUN curl -fsSL https://get.volta.sh | bash -s -- --skip-setup && \
     rm -rf /root/.npm /root/.cache/node-gyp
 
 # sops
-ARG SOPS_VERSION=v3.8.1
+ARG SOPS_VERSION=v3.13.3
 ARG TARGETARCH
 RUN set -eux; \
     case "$TARGETARCH" in \
@@ -552,7 +552,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=ja_JP.UTF-8 \
     TZ=Asia/Tokyo \
     CLOUDSDK_INSTALL_DIR=/usr/local/google-cloud-sdk \
-    AQUA_VERSION=v2.48.2 \
+    AQUA_VERSION=v2.65.2 \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
