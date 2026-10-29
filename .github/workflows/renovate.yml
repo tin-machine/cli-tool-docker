@@ -17,6 +17,8 @@ jobs:
         uses: renovatebot/github-action@v40.3.1
         with:
           configurationFile: .github/renovate-global.json
+          # 依存と同じく公開から14日以上経った版を使う（renovate.json の customManagers で更新）
+          renovate-version: 44.164.7
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
           LOG_LEVEL: info

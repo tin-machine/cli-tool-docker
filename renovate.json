@@ -8,7 +8,6 @@
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "14 days",
   "internalChecksFilter": "strict",
-  "prCreation": "not-pending",
   "postUpgradeTasks": {
     "commands": [
       "bash .github/scripts/update-aqua-checksum.bash"
@@ -18,6 +17,16 @@
     ],
     "executionMode": "branch"
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "renovate.yml で固定している Renovate 本体のバージョンを更新する",
+      "managerFilePatterns": ["/^\\.github/workflows/renovate\\.yml$/"],
+      "matchStrings": ["renovate-version: (?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "renovatebot/renovate",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
   "packageRules": [
     {
       "matchFileNames": ["aqua.yaml"],
