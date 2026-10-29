@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@v40.3.1
+        uses: renovatebot/github-action@0984fb80fc633b17e57f3e8b6c007fe0dc3e0d62 # v40.3.6
         with:
           configurationFile: .github/renovate-global.json
           # 依存と同じく公開から14日以上経った版を使う（renovate.json の customManagers で更新）

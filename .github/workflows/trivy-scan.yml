@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Scan latest image with Trivy
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest'
           format: 'table'
@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload vulnerability report to Slack
         if: steps.check_results.outputs.vulnerabilities_found == 'true'
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3 # v1.27.1
         with:
           channel-id: 'C075AE23M9P'  # 実際のチャンネルIDに置き換えてください
           initial_comment: '⚠️ *定期脆弱性スキャンレポート*\n`latest`イメージで脆弱性が検出されました。詳細は添付ファイルを確認してください。'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Notify Slack about no vulnerabilities
         if: steps.check_results.outputs.vulnerabilities_found == 'false'
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3 # v1.27.1
         with:
           channel-id: 'C075AE23M9P'  # 実際のチャンネルIDに置き換えてください
           payload: |
