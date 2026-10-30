@@ -261,33 +261,33 @@
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_darwin_amd64.tar.gz",
-      "checksum": "64A68D241573907DEC8557196423E63F836D7B2C4CE238DD6271A4FE72DBC1E9",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_darwin_amd64.tar.gz",
+      "checksum": "DA5532BD185A9D3A16A1F93774F835574E0C50BC74C2085B9917B9DF3E9FBBAA",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_darwin_arm64.tar.gz",
-      "checksum": "BA7FFD6A63E3C96458A582CCE7753FB450A4EBC75099B885B2B6C6F57E5620B0",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_darwin_arm64.tar.gz",
+      "checksum": "3437EBFC9DB720E431E86FD03ED19173B88DCB80B0F177D11A892126108661B5",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_linux_amd64.tar.gz",
-      "checksum": "C5234FF3A636CDA47719C73CA33A0183A5F441581455EDA8A0726E5030942B69",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_linux_amd64.tar.gz",
+      "checksum": "D005BBB85DA80DACDC07816F24A5DA723A9F6D1E9F3D3E7E73DF33F9CAA1358F",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_linux_arm64.tar.gz",
-      "checksum": "AC2CE7A8D0FB592557E8CD1F26E01C0E7E8CF20733AE40A25E2354FD054F4F25",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_linux_arm64.tar.gz",
+      "checksum": "D28CA5E9DDD7950DA4A808288F8A83F84FC3CA40E86BAB970F3ADEEF33578C0B",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_windows_amd64.zip",
-      "checksum": "A61F48E5C5B2919DCCE8F69FBC46CDD958CF49023E88E3950592A4F834B7AD01",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_windows_amd64.zip",
+      "checksum": "DF2F590F24C2BFE65A35010BFFB4369BA0792C9AFAF7FB324B2330895A37D19F",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/suzuki-shunsuke/pinact/v3.10.1/pinact_windows_arm64.zip",
-      "checksum": "E6E27F20AEDF66E9C09EF203F01B2BBF4B3963F7120163F54C7F3D06B6F19A9E",
+      "id": "github_release/github.com/suzuki-shunsuke/pinact/v5.0.0/pinact_windows_arm64.zip",
+      "checksum": "E054B2B99230629307172D70DDAB6D6C02CAE9CC5D4E40FB647025A2BDECEFF4",
       "algorithm": "sha256"
     },
     {
@@ -416,28 +416,28 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/get.helm.sh/helm-v3.22.0-darwin-amd64.tar.gz",
-      "checksum": "BD1D09F316558DDA23698527859600936FED1371021CE0F2272D66B2FDCFA69C",
+      "id": "http/get.helm.sh/helm-v4.3.1-darwin-amd64.tar.gz",
+      "checksum": "34BEC4EBA761BA5C16D1965EE6B8F5B0ABE5993974A802274E2A4F0418893D89",
       "algorithm": "sha256"
     },
     {
-      "id": "http/get.helm.sh/helm-v3.22.0-darwin-arm64.tar.gz",
-      "checksum": "4C9982A6CDEB458B60258DF66B55398CA5B19293F6877FAFFE2909AD6F23DFE0",
+      "id": "http/get.helm.sh/helm-v4.3.1-darwin-arm64.tar.gz",
+      "checksum": "6B4E61C8CD27D99E5A801E63FF25DD5C70B36875C2CD659D3E9CE6B76FC23198",
       "algorithm": "sha256"
     },
     {
-      "id": "http/get.helm.sh/helm-v3.22.0-linux-amd64.tar.gz",
-      "checksum": "1E4AB49E429626CF6C6958D914248B78C9730803C2751B87627E171DC800E7BB",
+      "id": "http/get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz",
+      "checksum": "0403A88AE20913D11B10A2467B50087721FEA7581736DA6B9D3992F5357FE54B",
       "algorithm": "sha256"
     },
     {
-      "id": "http/get.helm.sh/helm-v3.22.0-linux-arm64.tar.gz",
-      "checksum": "F14E804DFEE240F55525B667488FE9ADCA349E63E00C9AF634C0BEB1421AC310",
+      "id": "http/get.helm.sh/helm-v4.3.1-linux-arm64.tar.gz",
+      "checksum": "8CF8F66ECBC252AC8F7F06CCA68ABA88508DDFDE3A6A34FEB1678AD1694B4F88",
       "algorithm": "sha256"
     },
     {
-      "id": "http/get.helm.sh/helm-v3.22.0-windows-amd64.tar.gz",
-      "checksum": "43D898FFE2929046C805160B54EE704ABC8B5736331FD3D54898CDDABB86595F",
+      "id": "http/get.helm.sh/helm-v4.3.1-windows-amd64.tar.gz",
+      "checksum": "5735A2BD59071B814546C6D0A76F29A8FD3EBE06E3A4791DD2784804AE895F34",
       "algorithm": "sha256"
     },
     {
