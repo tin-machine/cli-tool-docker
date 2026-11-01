@@ -16,6 +16,30 @@
 Linux では既定で `ghcr.io/tin-machine/cli-tool-docker:latest` を使う。
 macOS では `cli-tool-docker:latest` がなければ、この repository の Dockerfile から local build する。
 
+## macOS で apple/container を使う
+
+macOS に [apple/container](https://github.com/apple/container)（`container` コマンド）があれば、`shell.bash` は Docker ではなく apple/container を使う。
+`CLI_TOOL_RUNTIME=docker ./shell.bash` で Docker に戻せる（`auto` / `docker` / `apple`）。
+
+- イメージは `ghcr.io/tin-machine/cli-tool-docker:latest-arm64` を使い、無ければ pull する。`latest` は amd64 だけなので使わない
+  - `latest-arm64` は CI の `build-arm64-workspace` が動作確認を通った main のイメージに付ける
+  - 更新は手で行う: `container image pull --platform linux/arm64 ghcr.io/tin-machine/cli-tool-docker:latest-arm64`
+  - `container build` は Dockerfile の大きさに上限があり（[apple/container#735](https://github.com/apple/container/issues/735)）、この Dockerfile はそのままではビルドできない
+- CPU とメモリは `CLI_TOOL_CPUS`（既定 4）と `CLI_TOOL_MEMORY`（既定 `8G`）で変えられる
+- `jq` が必要（コンテナの一覧を JSON で読むため）
+
+Docker のときとの違い：
+
+| 項目 | apple/container |
+|---|---|
+| `--network host` | 無い。コンテナには vmnet の IP（192.168.64.x）が付く |
+| Mac 上のサービスへの接続 | `sudo container system dns create host.container.internal --localhost 203.0.113.113` を一度実行し、`host.container.internal` で繋ぐ。Mac を再起動すると消えるので、届かなければ delete → create をやり直す |
+| `--privileged` | 無い。`--cap-add ALL` を付ける |
+| docker.sock / containerd.sock | マウントしない。コンテナ内から docker / nerdctl は使えない |
+| SSH エージェント | `--ssh` で転送する |
+
+GSA（Global Secure Access）が有効だと、コンテナ内の名前解決が GSA の仮 IP（6.6.x.x）になり、外に出られないことがある。
+
 ## Kubernetes workspace の SSH 入口
 
 SSH は `workspace-ssh-sidecar` target の専用 image で受け、CLI container の tmux へ接続する。
