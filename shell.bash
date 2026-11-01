@@ -34,6 +34,19 @@ find_container_id() {
     local scope="${1:-running}"
     local ps_args=(ps)
 
+    # apple/container は Go テンプレートの --format が無いので JSON から探す。
+    # コンテナ ID は --name で付けた名前そのものになる。
+    if [ "$RUNTIME" = "apple" ]; then
+        local list_args=(list --format json)
+        if [ "$scope" = "all" ]; then
+            list_args=(list --all --format json)
+        fi
+        $CONTAINER_CMD "${list_args[@]}" | \
+            jq -r --arg name "$CONTAINER_NAME" '.[] | select(.configuration.id == $name) | .configuration.id' | \
+            head -n 1
+        return
+    fi
+
     if [ "$scope" = "all" ]; then
         ps_args=(ps --all)
     fi
@@ -42,18 +55,54 @@ find_container_id() {
         awk -F '\t' -v name="$CONTAINER_NAME" '$2 == name { print $1; exit }'
 }
 
-# コンテナ管理ツールを決定
-if command -v docker >/dev/null 2>&1; then
-    CONTAINER_CMD="docker"
-elif command -v nerdctl >/dev/null 2>&1; then
-    CONTAINER_CMD="sudo nerdctl"
-else
-    echo "[shell] Error: nerdctl も docker も見つかりません。" >&2
-    exit 1
+# コンテナランタイムを決定
+# CLI_TOOL_RUNTIME=auto（既定）/ docker / apple
+# auto では Mac に apple/container（container コマンド）があれば apple を使う。
+# Docker Desktop に戻したいときは CLI_TOOL_RUNTIME=docker を指定する。
+RUNTIME="${CLI_TOOL_RUNTIME:-auto}"
+if [ "$RUNTIME" = "auto" ]; then
+    if [ "$(uname -s)" = "Darwin" ] && command -v container >/dev/null 2>&1; then
+        RUNTIME="apple"
+    else
+        RUNTIME="docker"
+    fi
 fi
 
+case "$RUNTIME" in
+    apple)
+        if ! command -v container >/dev/null 2>&1; then
+            echo "[shell] Error: container コマンド（apple/container）が見つかりません。" >&2
+            exit 1
+        fi
+        if ! command -v jq >/dev/null 2>&1; then
+            echo "[shell] Error: apple/container の利用には jq が必要です。" >&2
+            exit 1
+        fi
+        CONTAINER_CMD="container"
+        ;;
+    docker)
+        if command -v docker >/dev/null 2>&1; then
+            CONTAINER_CMD="docker"
+        elif command -v nerdctl >/dev/null 2>&1; then
+            CONTAINER_CMD="sudo nerdctl"
+        else
+            echo "[shell] Error: nerdctl も docker も見つかりません。" >&2
+            exit 1
+        fi
+        ;;
+    *)
+        echo "[shell] Error: CLI_TOOL_RUNTIME は auto / docker / apple のいずれかにしてください ($RUNTIME)。" >&2
+        exit 1
+        ;;
+esac
+
 # コンテナランタイムが起動しているかチェック
-if ! $CONTAINER_CMD info >/dev/null 2>&1; then
+if [ "$RUNTIME" = "apple" ]; then
+    if ! $CONTAINER_CMD system status >/dev/null 2>&1; then
+        echo "[shell] Error: apple/container が起動していません。brew services start container を実行してください。"
+        exit 10
+    fi
+elif ! $CONTAINER_CMD info >/dev/null 2>&1; then
     echo "[shell] Error: コンテナランタイムが起動していないか、正常に動作していません。"
     exit 10
 fi
@@ -63,9 +112,16 @@ CONTAINER_NAME="cli-tool-docker"
 
 # アーキテクチャに応じてコンテナイメージを設定
 ARCH=$(uname -s)
+IMAGE_TAG="${CLI_TOOL_DOCKER_IMAGE_TAG:-latest}"
 case "$ARCH" in
     Darwin)
-        IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-cli-tool-docker}"
+        if [ "$RUNTIME" = "apple" ]; then
+            # ghcr の latest は amd64 のみ。arm64 は CI が動作確認後に latest-arm64 を付ける。
+            IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-ghcr.io/tin-machine/cli-tool-docker}"
+            IMAGE_TAG="${CLI_TOOL_DOCKER_IMAGE_TAG:-latest-arm64}"
+        else
+            IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-cli-tool-docker}"
+        fi
         ;;
     Linux)
         IMAGE_NAME="${CLI_TOOL_DOCKER_IMAGE:-ghcr.io/tin-machine/cli-tool-docker}"
@@ -76,13 +132,29 @@ case "$ARCH" in
         ;;
 esac
 
+# apple/container の場合、イメージが無ければ ghcr から pull する。
+# container build は Dockerfile の大きさに上限があり（apple/container#735）、この Dockerfile はビルドできない。
+# 更新したいときは container image pull を手で実行する。
+if [ "$RUNTIME" = "apple" ]; then
+    if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:$IMAGE_TAG" >/dev/null 2>&1; then
+        echo "[shell] イメージ $IMAGE_NAME:$IMAGE_TAG が見つからないため pull します..."
+        if ! $CONTAINER_CMD image pull --platform linux/arm64 "$IMAGE_NAME:$IMAGE_TAG"; then
+            # 全 blob 取得後に HTTP/2 の StreamClosed で失敗しても、イメージは使えることがある（2026-11-01 確認）
+            if $CONTAINER_CMD image inspect "$IMAGE_NAME:$IMAGE_TAG" >/dev/null 2>&1; then
+                echo "[shell] ⚠️ pull はエラーで終わりましたが、イメージは取得できているので続けます。" >&2
+            else
+                echo "[shell] Error: イメージの pull に失敗しました: $IMAGE_NAME:$IMAGE_TAG" >&2
+                exit 1
+            fi
+        fi
+    fi
 # mac（Darwin）の場合、イメージが存在しなければDockerfileからビルドする
-if [ "$ARCH" = "Darwin" ]; then
-    if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
+elif [ "$ARCH" = "Darwin" ]; then
+    if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:$IMAGE_TAG" >/dev/null 2>&1; then
         echo "[shell] mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
+        $CONTAINER_CMD build -t "$IMAGE_NAME:$IMAGE_TAG" "$SCRIPT_DIR"
     fi
 fi
 
@@ -111,48 +183,51 @@ if [ -z "$CONTAINER_ID" ]; then
     DOCKER_SOCK_GID=""
     DRI_GROUP_OPTS=()
     DRI_RENDER_GID=""
-    if [ -S /var/run/docker.sock ]; then
-        VOLUME_OPTS+=(--volume /var/run/docker.sock:/var/run/docker.sock)
-        DOCKER_SOCK_GID="$(get_path_gid /var/run/docker.sock)"
-        if [ -n "$DOCKER_SOCK_GID" ]; then
-            DOCKER_GROUP_OPTS+=(--group-add "${DOCKER_SOCK_GID}")
+    # apple/container では VM を越えて socket やデバイスを渡せないので探さない
+    if [ "$RUNTIME" != "apple" ]; then
+        if [ -S /var/run/docker.sock ]; then
+            VOLUME_OPTS+=(--volume /var/run/docker.sock:/var/run/docker.sock)
+            DOCKER_SOCK_GID="$(get_path_gid /var/run/docker.sock)"
+            if [ -n "$DOCKER_SOCK_GID" ]; then
+                DOCKER_GROUP_OPTS+=(--group-add "${DOCKER_SOCK_GID}")
+            else
+                echo "[shell] ⚠️ /var/run/docker.sock の GID を取得できませんでした。docker は権限不足になるかもしれません。" >&2
+            fi
         else
-            echo "[shell] ⚠️ /var/run/docker.sock の GID を取得できませんでした。docker は権限不足になるかもしれません。" >&2
+            echo "[shell] ⚠️ /var/run/docker.sock が見つかりません。docker は使えないかもしれません。" >&2
         fi
-    else
-        echo "[shell] ⚠️ /var/run/docker.sock が見つかりません。docker は使えないかもしれません。" >&2
-    fi
 
-    # WebGPU/Vulkan などで使う render node は通常 0660 root:<render gid>。
-    # --privileged により device はコンテナから見えるが、作業ユーザーには host 側の
-    # 数値 GID を supplementary group として引き継ぐ必要がある。
-    if [ -c /dev/dri/renderD128 ]; then
-        DRI_RENDER_GID="$(get_path_gid /dev/dri/renderD128)"
-        if [ -n "$DRI_RENDER_GID" ]; then
-            DRI_GROUP_OPTS+=(--group-add "${DRI_RENDER_GID}")
+        # WebGPU/Vulkan などで使う render node は通常 0660 root:<render gid>。
+        # --privileged により device はコンテナから見えるが、作業ユーザーには host 側の
+        # 数値 GID を supplementary group として引き継ぐ必要がある。
+        if [ -c /dev/dri/renderD128 ]; then
+            DRI_RENDER_GID="$(get_path_gid /dev/dri/renderD128)"
+            if [ -n "$DRI_RENDER_GID" ]; then
+                DRI_GROUP_OPTS+=(--group-add "${DRI_RENDER_GID}")
+            else
+                echo "[shell] ⚠️ /dev/dri/renderD128 の GID を取得できませんでした。GPU は権限不足になるかもしれません。" >&2
+            fi
         else
-            echo "[shell] ⚠️ /dev/dri/renderD128 の GID を取得できませんでした。GPU は権限不足になるかもしれません。" >&2
+            echo "[shell] /dev/dri/renderD128 が見つかりません。GPU render node は引き継ぎません。" >&2
         fi
-    else
-        echo "[shell] /dev/dri/renderD128 が見つかりません。GPU render node は引き継ぎません。" >&2
-    fi
 
-    if [ -S /run/containerd/containerd.sock ]; then
-        VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
-    else
-        echo "[shell] ⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
-    fi
+        if [ -S /run/containerd/containerd.sock ]; then
+            VOLUME_OPTS+=(--volume /run/containerd/containerd.sock:/run/containerd/containerd.sock)
+        else
+            echo "[shell] ⚠️ /run/containerd/containerd.sock が見つかりません。nerdctl は使えないかもしれません。" >&2
+        fi
 
-    if [ -d /var/lib/containerd ]; then
-        VOLUME_OPTS+=(--volume /var/lib/containerd:/var/lib/containerd)
-    else
-        echo "[shell] ⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
-    fi
+        if [ -d /var/lib/containerd ]; then
+            VOLUME_OPTS+=(--volume /var/lib/containerd:/var/lib/containerd)
+        else
+            echo "[shell] ⚠️ /var/lib/containerd が見つかりません。nerdctl が正しく動作しない可能性があります。" >&2
+        fi
 
-    if [ -d /etc/containerd ]; then
-        VOLUME_OPTS+=(--volume /etc/containerd:/etc/containerd:ro)
-    else
-        echo "[shell] /etc/containerd が見つかりません。" >&2
+        if [ -d /etc/containerd ]; then
+            VOLUME_OPTS+=(--volume /etc/containerd:/etc/containerd:ro)
+        else
+            echo "[shell] /etc/containerd が見つかりません。" >&2
+        fi
     fi
 
     # PID 1 が tail のままだと orphaned child を wait(2) しないため、
@@ -171,45 +246,75 @@ if [ -z "$CONTAINER_ID" ]; then
 
     cat <<EOF
 [shell] コンテナを起動します
+  RUNTIME: $RUNTIME
   CONTAINER_CMD: $CONTAINER_CMD
   VOLUME_OPTS: ${VOLUME_OPTS[*]}
   HOME: $HOME
   whoami: $(whoami)
   id -u: $(id -u)
   id -g: $(id -g)
-  IMAGE_NAME: $IMAGE_NAME
+  IMAGE_NAME: $IMAGE_NAME:$IMAGE_TAG
   DOCKER_SOCK_GID: ${DOCKER_SOCK_GID}
   DRI_RENDER_GID: ${DRI_RENDER_GID}
   INIT_OPT: ${INIT_OPT[*]}
   RM_OPT: ${RM_OPT[*]}
 EOF
 
-    $CONTAINER_CMD \
-      run \
-        -d \
-        --name "$CONTAINER_NAME" \
-        --user 0:0 \
-        --network host \
-        "${VOLUME_OPTS[@]}" \
-        --ipc shareable \
-        --volume "$HOME:$HOME" \
-        --volume /etc/resolv.conf:/etc/resolv.conf \
-        --env HOME="${HOME}" \
-        --env UID="$(id -u)" \
-        --env GID="$(id -g)" \
-        --env CLI_USER_ID="$(id -u)" \
-        --env CLI_GROUP_ID="$(id -g)" \
-        --env USER="$(whoami)" \
-        --env DOCKER_SOCK_GID="${DOCKER_SOCK_GID}" \
-        --env DRI_RENDER_GID="${DRI_RENDER_GID}" \
-        -w "${HOME}" \
-        --privileged \
-        --group-add 20 \
-        "${DOCKER_GROUP_OPTS[@]}" \
-        "${DRI_GROUP_OPTS[@]}" \
-        "${INIT_OPT[@]}" \
-        "${RM_OPT[@]}" \
-        "$IMAGE_NAME:latest"
+    if [ "$RUNTIME" = "apple" ]; then
+        # apple/container はコンテナごとに軽量 VM を使うため、Docker 用の次のオプションは使わない。
+        # - --network host: 無い。各コンテナに vmnet の IP が付く。Mac 上のサービスへは
+        #   `sudo container system dns create host.container.internal --localhost 203.0.113.113` で作った名前で繋ぐ
+        # - --privileged: 無い。--cap-add ALL で近づける
+        # - --ipc / --group-add / resolv.conf / docker.sock 等のマウント: 無い、または VM を越えて使えない
+        # VM の既定の CPU・メモリは小さいので明示する。
+        $CONTAINER_CMD \
+          run \
+            -d \
+            --name "$CONTAINER_NAME" \
+            --user 0:0 \
+            --volume "$HOME:$HOME" \
+            --env HOME="${HOME}" \
+            --env UID="$(id -u)" \
+            --env GID="$(id -g)" \
+            --env CLI_USER_ID="$(id -u)" \
+            --env CLI_GROUP_ID="$(id -g)" \
+            --env USER="$(whoami)" \
+            -w "${HOME}" \
+            --cap-add ALL \
+            --ssh \
+            --cpus "${CLI_TOOL_CPUS:-4}" \
+            --memory "${CLI_TOOL_MEMORY:-8G}" \
+            "${INIT_OPT[@]}" \
+            "${RM_OPT[@]}" \
+            "$IMAGE_NAME:$IMAGE_TAG"
+    else
+        $CONTAINER_CMD \
+          run \
+            -d \
+            --name "$CONTAINER_NAME" \
+            --user 0:0 \
+            --network host \
+            "${VOLUME_OPTS[@]}" \
+            --ipc shareable \
+            --volume "$HOME:$HOME" \
+            --volume /etc/resolv.conf:/etc/resolv.conf \
+            --env HOME="${HOME}" \
+            --env UID="$(id -u)" \
+            --env GID="$(id -g)" \
+            --env CLI_USER_ID="$(id -u)" \
+            --env CLI_GROUP_ID="$(id -g)" \
+            --env USER="$(whoami)" \
+            --env DOCKER_SOCK_GID="${DOCKER_SOCK_GID}" \
+            --env DRI_RENDER_GID="${DRI_RENDER_GID}" \
+            -w "${HOME}" \
+            --privileged \
+            --group-add 20 \
+            "${DOCKER_GROUP_OPTS[@]}" \
+            "${DRI_GROUP_OPTS[@]}" \
+            "${INIT_OPT[@]}" \
+            "${RM_OPT[@]}" \
+            "$IMAGE_NAME:$IMAGE_TAG"
+    fi
 
     # コンテナの起動を待機
     wait_for_container
