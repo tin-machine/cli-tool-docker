@@ -185,6 +185,13 @@ jobs:
           CLI_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
           SSH_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/cli-tool-docker:ssh-arm64-${{ github.sha }}
         run: bash tests/workspace-ssh-smoke.sh "$CLI_IMAGE_REF" "$SSH_IMAGE_REF"
+      # Mac（apple/container）から決まった名前で取れるよう、動作確認を通った main のイメージにだけ付ける
+      - name: Tag latest-arm64
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository_owner }}/cli-tool-docker:latest-arm64 \
+            ghcr.io/${{ github.repository_owner }}/cli-tool-docker:arm64-${{ github.sha }}
 
   # リリースノート作成（mainブランチ push 時）
   release-draft:
