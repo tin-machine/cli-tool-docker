@@ -288,7 +288,7 @@ EOF
             --cap-add ALL \
             --ssh \
             --cpus "${CLI_TOOL_CPUS:-4}" \
-            --memory "${CLI_TOOL_MEMORY:-8G}" \
+            --memory "${CLI_TOOL_MEMORY:-6G}" \
             "${INIT_OPT[@]}" \
             "${RM_OPT[@]}" \
             "$IMAGE_NAME:$IMAGE_TAG"
