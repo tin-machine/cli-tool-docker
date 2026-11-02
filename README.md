@@ -33,7 +33,8 @@ Docker のときとの違い：
 | 項目 | apple/container |
 |---|---|
 | `--network host` | 無い。コンテナには vmnet の IP（192.168.64.x）が付く |
-| Mac 上のサービスへの接続 | `sudo container system dns create host.container.internal --localhost 203.0.113.113` を一度実行し、`host.container.internal` で繋ぐ。Mac を再起動すると消えるので、届かなければ delete → create をやり直す |
+| Mac 上のサービスへの接続（0.0.0.0 で待ち受け） | `host.docker.internal` で繋がる。`shell.bash` が起動時に `/etc/hosts` で vmnet のゲートウェイ（192.168.64.1）に向け、`HB_AGENT_URL=http://host.docker.internal:5321` を渡す（host-bridge 用） |
+| Mac 上のサービスへの接続（127.0.0.1 だけで待ち受け） | `sudo container system dns create host.container.internal --localhost 203.0.113.113` を一度実行し、`host.container.internal` で繋ぐ。Mac を再起動すると消えるので、届かなければ delete → create をやり直す |
 | `--privileged` | 無い。`--cap-add ALL` を付ける |
 | docker.sock / containerd.sock | マウントしない。コンテナ内から docker / nerdctl は使えない |
 | SSH エージェント | `--ssh` で転送する |

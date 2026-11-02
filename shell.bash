@@ -262,17 +262,22 @@ EOF
 
     if [ "$RUNTIME" = "apple" ]; then
         # apple/container はコンテナごとに軽量 VM を使うため、Docker 用の次のオプションは使わない。
-        # - --network host: 無い。各コンテナに vmnet の IP が付く。Mac 上のサービスへは
+        # - --network host: 無い。各コンテナに vmnet の IP が付く。Mac 上で 0.0.0.0 で待ち受けるサービス
+        #   （host-bridge など）へはゲートウェイで繋がる。起動後に host.docker.internal をゲートウェイに向ける。
+        #   127.0.0.1 だけで待ち受けるサービスは
         #   `sudo container system dns create host.container.internal --localhost 203.0.113.113` で作った名前で繋ぐ
         # - --privileged: 無い。--cap-add ALL で近づける
         # - --ipc / --group-add / resolv.conf / docker.sock 等のマウント: 無い、または VM を越えて使えない
         # VM の既定の CPU・メモリは小さいので明示する。
+        # host-bridge のクライアント（~/.claude/hooks/speak.sh など）は /.dockerenv が無いと
+        # 127.0.0.1 に送ってしまうので、HB_AGENT_URL で宛先を渡す。
         $CONTAINER_CMD \
           run \
             -d \
             --name "$CONTAINER_NAME" \
             --user 0:0 \
             --volume "$HOME:$HOME" \
+            --env HB_AGENT_URL="${HB_AGENT_URL:-http://host.docker.internal:5321}" \
             --env HOME="${HOME}" \
             --env UID="$(id -u)" \
             --env GID="$(id -g)" \
@@ -318,6 +323,15 @@ EOF
 
     # コンテナの起動を待機
     wait_for_container
+
+    # apple/container には --add-host が無いので、Docker Desktop と同じ host.docker.internal を
+    # vmnet のゲートウェイ（Mac 側）に向ける。~/.claude.json の Playwright MCP などがこの名前を使う。
+    if [ "$RUNTIME" = "apple" ]; then
+        HOST_GATEWAY="$($CONTAINER_CMD network inspect default 2>/dev/null | jq -r '.[0].status.ipv4Gateway // empty')"
+        HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
+        $CONTAINER_CMD exec --user 0:0 "$CONTAINER_ID" \
+            sh -c "grep -q ' host.docker.internal\$' /etc/hosts || echo '$HOST_GATEWAY host.docker.internal' >> /etc/hosts"
+    fi
 fi
 
 # 第一引数があればシェルコマンドとして使い、なければデフォルトはbash
