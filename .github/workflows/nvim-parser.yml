@@ -1,0 +1,78 @@
+---
+name: Build Neovim parser bundle
+
+'on':
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - scripts/build-nvim-gitcommit.py
+      - .github/workflows/nvim-parser.yml
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - scripts/build-nvim-gitcommit.py
+      - .github/workflows/nvim-parser.yml
+
+permissions:
+  contents: read
+
+jobs:
+  parser:
+    name: gitcommit (${{ matrix.machine }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            machine: x86_64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+      - name: Build native parser artifacts
+        env:
+          BUILD_PLATFORM: ${{ matrix.platform }}
+        run: |
+          docker buildx build --platform "$BUILD_PLATFORM" \
+            --target nvim-gitcommit-artifacts --output type=local,dest=dist .
+      - name: Verify native bundle and checksums
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: |
+          python3 - <<'PY'
+          import ctypes
+          import hashlib
+          import json
+          import os
+          import platform
+          from pathlib import Path
+
+          machine = os.environ['EXPECTED_MACHINE']
+          assert platform.machine() == machine
+          root = Path('dist/opt/nvim-parsers/gitcommit') / machine
+          manifest = json.loads((root / 'manifest.json').read_text())
+          assert manifest['machine'] == machine
+          assert manifest['schema_version'] == 1
+          assert manifest['language'] == 'gitcommit'
+          library = root / 'parser/gitcommit.so'
+          assert hashlib.sha256(library.read_bytes()).hexdigest() == manifest['parser_sha256']
+          for name, expected in manifest['query_sha256'].items():
+              query = root / 'queries/gitcommit' / name
+              assert hashlib.sha256(query.read_bytes()).hexdigest() == expected
+          parser = ctypes.CDLL(str(library)).tree_sitter_gitcommit
+          parser.restype = ctypes.c_void_p
+          assert parser()
+          print('native gitcommit bundle verified:', machine)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: gitcommit-${{ matrix.machine }}
+          path: dist/opt/nvim-parsers/gitcommit/
+          if-no-files-found: error
