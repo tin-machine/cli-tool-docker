@@ -538,6 +538,13 @@ RUN command -v age >/dev/null && \
     test -x /usr/local/bin/uvx && \
     /usr/local/bin/uv --version && \
     /usr/local/bin/uvx --version
+# ホームを virtiofs（Rancher Desktop / Lima）でマウントすると、ディレクトリの所有者が
+# 0:0 と報告されることがあり（同じパスでも実行ごとに 502 になったり 0 になったりする）、
+# git が "detected dubious ownership" で止まる。
+# このコンテナはホストユーザー1人が自分のホームを触る前提なので、イメージ内のシステム設定で
+# すべてのディレクトリを safe 扱いにする（ホスト側の ~/.gitconfig は共有なので触らない）。
+RUN git config --system --add safe.directory '*' && \
+    test "$(git config --system --get safe.directory)" = '*'
 ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # デフォルトのコマンド

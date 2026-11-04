@@ -179,6 +179,14 @@ setpgid: デバイスに対する不適切なioctlです
 
 このため、現在は `su` に依存せず `gosu` と `setpriv` を使う構成にしている。
 
+## git の "detected dubious ownership" 対策
+
+Rancher Desktop（Lima）の virtiofs でホームをマウントすると、UID/GID を揃えていても、ディレクトリの所有者が `0:0` と報告されることがある（同じパスでも実行ごとに 502 になったり 0 になったりする）。
+すると git が `fatal: detected dubious ownership in repository` で止まる。
+
+このため Dockerfile でイメージ内の `/etc/gitconfig` に `safe.directory = *` を入れている。
+ホストと共有する `~/.gitconfig` には書かないので、Mac 側の git の挙動は変わらない。
+
 # コンテナ内から Docker を使う
 
 この image では、コンテナ内で別の Docker daemon を起動する Docker-in-Docker ではなく、ホストの `/var/run/docker.sock` を bind mount してホストの Docker daemon を操作する。
