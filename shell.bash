@@ -76,15 +76,37 @@ case "$ARCH" in
         ;;
 esac
 
-# mac（Darwin）の場合、イメージが存在しなければDockerfileからビルドする
-if [ "$ARCH" = "Darwin" ]; then
+# mac（Darwin）では、CI が ghcr に push したイメージを取得してローカル名のタグを付ける。
+# - 新しくコンテナを作る時だけ呼ぶ（起動中のコンテナに入るだけなら通信しない）
+# - latest-arm64 は CI のスモークテスト通過後に付くタグ。Intel Mac は latest（amd64）を使う
+# - CLI_TOOL_DOCKER_PULL=0 で取得をやめる。CLI_TOOL_DOCKER_IMAGE を指定した時も取得しない
+# - 取得に失敗したらローカルのイメージを使い、それも無ければ Dockerfile からビルドする
+ensure_mac_image() {
+    [ "$ARCH" = "Darwin" ] || return 0
+
+    if [ -z "${CLI_TOOL_DOCKER_IMAGE:-}" ] && [ "${CLI_TOOL_DOCKER_PULL:-1}" != "0" ]; then
+        local remote_tag
+        case "$(uname -m)" in
+            arm64|aarch64) remote_tag="latest-arm64" ;;
+            *)             remote_tag="latest" ;;
+        esac
+        local remote_image="ghcr.io/tin-machine/cli-tool-docker:${remote_tag}"
+
+        echo "[shell] 最新のイメージを取得します: $remote_image"
+        if $CONTAINER_CMD pull "$remote_image" && \
+            $CONTAINER_CMD tag "$remote_image" "$IMAGE_NAME:latest"; then
+            return 0
+        fi
+        echo "[shell] ⚠️ イメージの取得に失敗しました。ローカルのイメージを使います。" >&2
+    fi
+
     if ! $CONTAINER_CMD image inspect "$IMAGE_NAME:latest" >/dev/null 2>&1; then
         echo "[shell] mac向けのイメージ $IMAGE_NAME が見つからないため、Dockerfile からビルドします..."
         # スクリプトが置いてあるディレクトリを取得
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
         $CONTAINER_CMD build -t "$IMAGE_NAME:latest" "$SCRIPT_DIR"
     fi
-fi
+}
 
 # 実行中の対象コンテナIDを取得
 CONTAINER_ID=$(find_container_id)
@@ -102,6 +124,8 @@ if [ -z "$CONTAINER_ID" ]; then
     fi
 
     echo "[shell] コンテナが見つかりません。新しく起動します..."
+
+    ensure_mac_image
 
     # ボリューム設定
     # /var/run/docker.sock をマウントしているのは、コンテナ内で更にコンテナを起動したいために設定しています
