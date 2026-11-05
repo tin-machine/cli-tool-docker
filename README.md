@@ -138,18 +138,44 @@ Codex の `~/.codex/config.toml` や DevRag の `~/.config/devrag/homecluster-do
 
 ## neovim
 
-#### コンパイルしている理由
+### コンパイルしている理由
 
-Dockerfile では Ubuntu package の `neovim` ではなく、upstream の `release-0.11` branch を `/opt/neovim` へ install している。
+Dockerfile では Ubuntu package の `neovim` ではなく、upstream の `release-0.12` branch を `/opt/neovim` へ install している。
 これは rafi config 側の Neovim plugin 群や Copilot 用に、Ubuntu package の更新タイミングへ依存しないため。
 
 将来 Ubuntu 側の `neovim` package で必要な version と機能が満たせるようになったら、source build をやめる余地がある。
 
-#### neovimのビルドオプション
+### neovimのビルドオプション
+
 [ここに説明がある](https://github.com/neovim/neovim/wiki/Building-Neovim#building)
+
 - Release
 - Debug
 - RelWithDebInfo
+
+### gitcommit parser の事前ビルド
+
+`nvim-gitcommit-build` stage で、Neovim のコミットメッセージ用 parser を事前ビルドする。
+生成物は `/opt/nvim-parsers/gitcommit/<CPU>/` に入り、CPU は `x86_64` または `aarch64`。
+parser・queries・ライセンス・revision と SHA-256 を記録した `manifest.json` を同梱する。
+
+入力の revision と archive SHA-256 は `scripts/build-nvim-gitcommit.py` で固定する。
+コンパイルは `-O0`、プロセスの仮想メモリ上限1536 MiB、制限時間180秒。
+この parser の高最適化ビルドで作業コンテナのメモリを使い切らないための設定である。
+
+Neovim 側にも、CPU・parser/plugin revision・チェックサムを照合して bundle を読み込む設定が必要。
+イメージへの追加だけでは、HOME 側の設定による自動コンパイルは止まらない。
+プラグイン更新時は対応する parser と queries も更新し、不一致時に実行中コンパイルへ戻さないこと。
+
+parser の成果物だけを取り出す場合:
+
+```bash
+docker buildx build --target nvim-gitcommit-artifacts --platform linux/arm64 \
+  --output type=local,dest=./gitcommit-arm64 .
+```
+
+amd64 は `--platform linux/amd64` を指定する。
+成果物は export 先の `opt/nvim-parsers/gitcommit/<CPU>/` にある。
 
 # ログインするユーザーの作成をどうするか?
 

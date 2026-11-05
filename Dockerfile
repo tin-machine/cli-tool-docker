@@ -157,6 +157,20 @@ RUN git clone https://github.com/neovim/neovim.git . && \
     make install
 
 # =========================
+# gitcommit parser: build outside interactive Neovim sessions
+# =========================
+FROM ubuntu:26.04 AS nvim-gitcommit-build
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install ca-certificates gcc libc6-dev python3 && \
+    rm -rf /var/lib/apt/lists/*
+COPY scripts/build-nvim-gitcommit.py /build-nvim-gitcommit.py
+RUN python3 /build-nvim-gitcommit.py --output-dir /out/opt/nvim-parsers/gitcommit
+
+FROM scratch AS nvim-gitcommit-artifacts
+COPY --from=nvim-gitcommit-build /out/opt/nvim-parsers/ /opt/nvim-parsers/
+
+# =========================
 # tmux build (with sixel)
 # =========================
 FROM build AS tmux-build
@@ -458,6 +472,8 @@ RUN set -eux; \
 # Chawan TUI browser
 ARG CHAWAN_VERSION=0.4.0
 ARG CHAWAN_DEB_SHA256=858eb1fb02897a24af4e1d20a17a82692dad100b09ef0064f5f9199e3647dda1
+# This stage explicitly uses Bash, including its string substitution below.
+# hadolint ignore=SC3060
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) \
@@ -503,6 +519,7 @@ FROM scratch AS artifacts
 
 # Neovim / tmux / nerdctl / lazygit / CNI / cargo-built tools / osc の成果物を集約
 COPY --from=neovim-build     /opt/neovim            /opt/neovim
+COPY --from=nvim-gitcommit-build /out/opt/nvim-parsers/ /opt/nvim-parsers/
 COPY --from=tmux-build       /opt/tmux              /opt/tmux
 COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
 COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
@@ -528,6 +545,8 @@ ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 RUN if getent passwd ubuntu >/dev/null; then userdel -r ubuntu; fi && \
     if getent group ubuntu >/dev/null; then groupdel ubuntu; fi
 
+# artifacts contains only the curated runtime tree above.
+# hadolint ignore=DL3067
 COPY --from=artifacts / /
 # Final image smoke checks for sandbox and managed tool entrypoints.
 RUN command -v age >/dev/null && \
@@ -554,6 +573,8 @@ CMD ["tail", "-F", "/dev/null"]
 # ARM64 workspace 用だけ最終 filesystem を単一 layer にして、容量を抑える。
 # runtime 設定は final と base/tools の ENV に合わせて維持する。
 FROM scratch AS workspace-flat
+# Deliberately flatten the runtime tree for the native snapshotter.
+# hadolint ignore=DL3067
 COPY --from=final / /
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=ja_JP.UTF-8 \
