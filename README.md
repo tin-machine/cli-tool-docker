@@ -14,7 +14,10 @@
 
 `shell.bash` は host 側で `docker` があれば Docker を使い、なければ `sudo nerdctl` を使う。
 Linux では既定で `ghcr.io/tin-machine/cli-tool-docker:latest` を使う。
-macOS では `cli-tool-docker:latest` がなければ、この repository の Dockerfile から local build する。
+macOS では、新しくコンテナを作る時に `ghcr.io/tin-machine/cli-tool-docker:latest-arm64`（Intel Mac は `latest`）を pull し、`cli-tool-docker:latest` のタグを付けて使う。
+`latest-arm64` は CI のスモークテストを通った後に付くタグ。起動中のコンテナに入るだけなら pull しない。
+pull に失敗した時はローカルの `cli-tool-docker:latest` を使い、それも無ければこの repository の Dockerfile から local build する。
+pull したくない時は `CLI_TOOL_DOCKER_PULL=0 ./shell.bash`。`CLI_TOOL_DOCKER_IMAGE` を指定した時も pull しない。
 
 ## Kubernetes workspace の SSH 入口
 
