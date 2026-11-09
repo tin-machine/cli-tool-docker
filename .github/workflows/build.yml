@@ -85,7 +85,8 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
-          channel-id: 'C075AE23M9P'
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": "ビルド結果: ${{ job.status }} / ${{ github.repository }}",
@@ -117,8 +118,6 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   build-arm64-workspace:
     name: Build ARM64 workspace image
