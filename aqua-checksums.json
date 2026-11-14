@@ -51,23 +51,23 @@
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/fujiwara/lambroll/v1.5.4/lambroll_v1.5.4_darwin_amd64.tar.gz",
-      "checksum": "115C553CED47FB2C1F8F7A6F8688A462DF804D9DF60B1C2C87FCD5A76BA19CFB",
+      "id": "github_release/github.com/fujiwara/lambroll/v1.6.0/lambroll_v1.6.0_darwin_amd64.tar.gz",
+      "checksum": "A4BF00715AFAFBD69E04EF72DCD7DFE4984EB4006EF0FF1CE639176B557446D8",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/fujiwara/lambroll/v1.5.4/lambroll_v1.5.4_darwin_arm64.tar.gz",
-      "checksum": "281DF919422D9785DECDBA88ED2F1839B988A6A9E35994906857540DE93DDB72",
+      "id": "github_release/github.com/fujiwara/lambroll/v1.6.0/lambroll_v1.6.0_darwin_arm64.tar.gz",
+      "checksum": "A8759BFE9D89A4902B4C486438C85F8C38F795BA3A1AE1DA539FADF0D9B92E3D",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/fujiwara/lambroll/v1.5.4/lambroll_v1.5.4_linux_amd64.tar.gz",
-      "checksum": "057C7719B2C56EFBFDCD835A299B8FFA587333F53811C5FF7CD3AD6BFB890899",
+      "id": "github_release/github.com/fujiwara/lambroll/v1.6.0/lambroll_v1.6.0_linux_amd64.tar.gz",
+      "checksum": "E856AF90F1B77816C1B079FAAFACEF2C48565CA3D8DED364FD9B8F0E13EED9D9",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/fujiwara/lambroll/v1.5.4/lambroll_v1.5.4_linux_arm64.tar.gz",
-      "checksum": "9A8A3AD072180AD8AB26306E0B24A82F0FC4632F9B914A2BE285256BC9B008CE",
+      "id": "github_release/github.com/fujiwara/lambroll/v1.6.0/lambroll_v1.6.0_linux_arm64.tar.gz",
+      "checksum": "C29819C0EB28A96E9C6F7E5D78987628920852AD9991A8FF9DD700D87035A978",
       "algorithm": "sha256"
     },
     {
@@ -371,18 +371,18 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/awscli.amazonaws.com/AWSCLIV2-2.39.0.pkg",
-      "checksum": "79808BAE5C61422ADC1FBD14182ABACCA4E6DF11263753033FA69441D0745073",
+      "id": "http/awscli.amazonaws.com/AWSCLIV2-2.39.2.pkg",
+      "checksum": "74153A9818DD70EFE0503253F6E9C994CA93205D87FDA06BDE491AEE9B91DF5B",
       "algorithm": "sha256"
     },
     {
-      "id": "http/awscli.amazonaws.com/awscli-exe-linux-aarch64-2.39.0.zip",
-      "checksum": "05DA9395B4D148C42E959192650BF4A7CBB59EA275FA334D0936C593C27B946F",
+      "id": "http/awscli.amazonaws.com/awscli-exe-linux-aarch64-2.39.2.zip",
+      "checksum": "53E639D3160ECFE7A5C50AD2A922CE8E96FB21F732193001251760D33CD7FD64",
       "algorithm": "sha256"
     },
     {
-      "id": "http/awscli.amazonaws.com/awscli-exe-linux-x86_64-2.39.0.zip",
-      "checksum": "6C89CE7ED7BC0A2520E2BC3EEEDFEA4E2EB2E7DA2836860C9471871408404036",
+      "id": "http/awscli.amazonaws.com/awscli-exe-linux-x86_64-2.39.2.zip",
+      "checksum": "BB3E675D5C9A915121F3F90B380EC041BA52517067D017E4A4CEBA40E0213247",
       "algorithm": "sha256"
     },
     {

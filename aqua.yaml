@@ -11,9 +11,9 @@ checksum:
 # バージョンはきちんと記述する事、でないと最後のリンクがはられないケースがあった(lambroll)
 packages:
   - name: astral-sh/uv@0.13.6
-  - name: aws/aws-cli@2.39.0
+  - name: aws/aws-cli@2.39.2
   - name: 99designs/aws-vault@v7.2.0  # aws認証情報の暗号化
-  - name: fujiwara/lambroll@v1.5.4
+  - name: fujiwara/lambroll@v1.6.0
   - name: golangci/golangci-lint@v2.15.0  # Golangのlint
   - name: gohugoio/hugo@v0.169.0  # GolangのCMS
   - name: hadolint/hadolint@v2.15.1  # hadolint: Dockerfile linter
