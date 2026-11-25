@@ -212,6 +212,14 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
     install -Dm0755 /opt/cargo/bin/navi /out/bin/navi && \
     install -Dm0755 /opt/cargo/bin/zoxide /out/bin/zoxide
 
+# Runtime development tools use a pinned Rustup toolchain.
+ARG RUST_VERSION=1.95.0
+RUN export RUSTUP_HOME=/out/opt/rustup && \
+    rustup toolchain install "$RUST_VERSION" --profile minimal --component rustfmt --no-self-update && \
+    rustup default "$RUST_VERSION" && \
+    install -Dm0755 /opt/cargo/bin/rustup /out/bin/rustup && \
+    for proxy in cargo rustc rustdoc rustfmt cargo-fmt; do ln -s rustup "/out/bin/$proxy"; done
+
 # =========================
 # nerdctl(full) install (arch-aware)
 # =========================
@@ -525,6 +533,7 @@ COPY --from=nerdctl-install  /out/bin/              /usr/local/bin/
 COPY --from=lazygit          /out/lazygit           /usr/local/bin/lazygit
 COPY --from=cni-install      /opt/cni               /opt/cni
 COPY --from=cargo-install    /out/bin/              /usr/local/bin/
+COPY --from=cargo-install    /out/opt/rustup/        /opt/rustup/
 COPY --from=go-cli-install   /out/osc               /usr/local/bin/osc
 COPY --from=yazi-install     /out/bin/yazi          /usr/local/bin/yazi
 COPY --from=yazi-install     /out/bin/ya            /usr/local/bin/ya
@@ -537,7 +546,8 @@ COPY --chmod=0755 entrypoint.bash /usr/local/bin/entrypoint.bash
 FROM tools AS final
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
-ENV PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
+ENV RUSTUP_HOME=/opt/rustup \
+    PATH="/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:${PATH}"
 
 # Ubuntu イメージには UID/GID 1000 の ubuntu ユーザーが含まれる場合がある。
 # ホストユーザーと同じ UID/GID のユーザーを entrypoint で作成できるようにし、
@@ -556,7 +566,11 @@ RUN command -v age >/dev/null && \
     test -x /usr/local/bin/uv && \
     test -x /usr/local/bin/uvx && \
     /usr/local/bin/uv --version && \
-    /usr/local/bin/uvx --version
+    /usr/local/bin/uvx --version && \
+    rustup show active-toolchain && \
+    rustc --version && \
+    cargo --version && \
+    cargo fmt --version
 # ホームを virtiofs（Rancher Desktop / Lima）でマウントすると、ディレクトリの所有者が
 # 0:0 と報告されることがあり（同じパスでも実行ごとに 502 になったり 0 になったりする）、
 # git が "detected dubious ownership" で止まる。
@@ -585,6 +599,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     AQUA_GLOBAL_CONFIG=/usr/local/etc/aqua.yaml \
     AQUA_ROOT_DIR=/usr/local/aqua \
     VOLTA_HOME=/opt/volta \
+    RUSTUP_HOME=/opt/rustup \
     PATH=/opt/neovim/bin:/opt/tmux/bin:/opt/cni/bin:/opt/bin:/usr/local/bin:/usr/local/aqua/bin:/usr/local/google-cloud-sdk/google-cloud-sdk/bin:/opt/npm-global/bin:/opt/volta/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
 ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 CMD ["tail", "-F", "/dev/null"]

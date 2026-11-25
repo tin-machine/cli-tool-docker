@@ -70,6 +70,11 @@ Ubuntu 26.04 移行時の package rename、Chawan 追加、smoke test、image si
 - `/home/kaoru/ghq/github.com/tin-machine/hugo/content/docker/docker-ubuntu-26-04-cli-tool-docker/`
 - `/home/kaoru/ghq/github.com/tin-machine/hugo/content/docker/docker-image-size-cli-tool-docker/`
 
+# Rust の開発コマンド
+
+コンテナに Rust 1.95.0 と同じツールチェーンの `rustfmt` を同梱しています。
+`rustup show active-toolchain`、`cargo --version`、`cargo fmt --version` で選択中の版を確認できます。
+
 # 設定の背景
 
 ## repo-local skills
